@@ -1,0 +1,20 @@
+Package: brstocks
+Title: Brazilian Stock Market Data and Analysis
+Version: 0.0.0.9000
+Authors@R: 
+    person("João Paulo", "dos Santos Pereira Barbosa", 
+           email = "joao.31582129@gmail.com", 
+           role = c("aut", "cre"))
+Description: Provides tools to retrieve and analyze historical stock data 
+    from the Brazilian stock exchange (B3) and other markets via Yahoo Finance.
+    Includes functions for calculating returns, beta, correlation and 
+    covariance matrices, supporting quantitative finance analysis.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    yfR,
+    dplyr,
+    ggplot2,
+    zoo
