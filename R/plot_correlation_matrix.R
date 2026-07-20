@@ -1,8 +1,8 @@
 #' Plot a heatmap of the correlation matrix
 #'
-#' Computes and visualizes the pairwise correlation matrix of log-adjusted
-#' returns as a color-coded heatmap. Correlation values are displayed inside
-#' each cell, rounded to two decimal places.
+#' Visualizes a pairwise correlation matrix of log-adjusted returns as a
+#' color-coded heatmap. Correlation values are displayed inside each cell,
+#' rounded to two decimal places.
 #'
 #' Colors follow the standard financial convention:
 #' \itemize{
@@ -11,21 +11,32 @@
 #'   \item Red: negative correlation
 #' }
 #'
-#' @param stock_data A tibble returned by \code{\link{get_stocks}}, containing
-#'   two or more tickers.
+#' @param x Either (a) a correlation matrix previously computed with
+#'   \code{\link{calc_correlation_matrix}}, or (b) a raw \code{stock_data}
+#'   tibble returned by \code{\link{get_stocks}}, containing two or more
+#'   tickers. Passing a matrix you already computed avoids recalculating the
+#'   correlation from scratch, and lets you reuse the same matrix in other
+#'   calculations (e.g. as a sanity check alongside
+#'   \code{\link{calc_covariance_matrix}}).
 #'
 #' @return A \code{ggplot2} object.
 #'
 #' @examples
 #' \dontrun{
 #' acoes <- get_stocks(c("PETR4", "VALE3", "ITUB4", "BBDC4"))
+#'
+#' # Recommended: compute once, reuse the variable
+#' cor_mat <- calc_correlation_matrix(acoes)
+#' plot_correlation_matrix(cor_mat)
+#'
+#' # Also supported: pass raw stock_data directly (computed internally)
 #' plot_correlation_matrix(acoes)
 #' }
 #'
 #' @export
-plot_correlation_matrix <- function(stock_data) {
+plot_correlation_matrix <- function(x) {
 
-  cor_matrix <- calc_correlation_matrix(stock_data)
+  cor_matrix <- if (is.matrix(x)) x else calc_correlation_matrix(x)
 
   cor_long <- as.data.frame(cor_matrix) %>%
     tibble::rownames_to_column(var = "ativo1") %>%
@@ -38,9 +49,9 @@ plot_correlation_matrix <- function(stock_data) {
   ggplot2::ggplot(cor_long, ggplot2::aes(x = ativo1, y = ativo2, fill = correlacao)) +
     ggplot2::geom_tile(color = "white") +
     ggplot2::scale_fill_gradient2(
-      low      = "#d62728",
+      low      = brstocks_cor_vermelho,
       mid      = "white",
-      high     = "#1f77b4",
+      high     = brstocks_cor_azul,
       midpoint = 0,
       limits   = c(-1, 1)
     ) +

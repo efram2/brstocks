@@ -4,19 +4,24 @@
 \alias{plot_correlation_matrix}
 \title{Plot a heatmap of the correlation matrix}
 \usage{
-plot_correlation_matrix(stock_data)
+plot_correlation_matrix(x)
 }
 \arguments{
-\item{stock_data}{A tibble returned by \code{\link{get_stocks}}, containing
-two or more tickers.}
+\item{x}{Either (a) a correlation matrix previously computed with
+\code{\link{calc_correlation_matrix}}, or (b) a raw \code{stock_data}
+tibble returned by \code{\link{get_stocks}}, containing two or more
+tickers. Passing a matrix you already computed avoids recalculating the
+correlation from scratch, and lets you reuse the same matrix in other
+calculations (e.g. as a sanity check alongside
+\code{\link{calc_covariance_matrix}}).}
 }
 \value{
 A \code{ggplot2} object.
 }
 \description{
-Computes and visualizes the pairwise correlation matrix of log-adjusted
-returns as a color-coded heatmap. Correlation values are displayed inside
-each cell, rounded to two decimal places.
+Visualizes a pairwise correlation matrix of log-adjusted returns as a
+color-coded heatmap. Correlation values are displayed inside each cell,
+rounded to two decimal places.
 }
 \details{
 Colors follow the standard financial convention:
@@ -29,6 +34,12 @@ Colors follow the standard financial convention:
 \examples{
 \dontrun{
 acoes <- get_stocks(c("PETR4", "VALE3", "ITUB4", "BBDC4"))
+
+# Recommended: compute once, reuse the variable
+cor_mat <- calc_correlation_matrix(acoes)
+plot_correlation_matrix(cor_mat)
+
+# Also supported: pass raw stock_data directly (computed internally)
 plot_correlation_matrix(acoes)
 }
 

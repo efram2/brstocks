@@ -1,8 +1,8 @@
 Package: brstocks
 Title: Brazilian Stock Market Data and Analysis
-Version: 0.0.0.9000
+Version: 0.0.1.9000
 Authors@R: 
-    person("João Paulo", "dos Santos Pereira Barbosa", 
+    person("Joao Paulo", "dos Santos Pereira Barbosa", 
            email = "joao.31582129@gmail.com", 
            role = c("aut", "cre"))
 Description: Provides tools to retrieve and analyze historical stock data 
@@ -16,10 +16,19 @@ RoxygenNote: 7.3.3
 Imports:
     dplyr,
     ggplot2,
+    httr2,
     magrittr,
-    purrr,
     stats,
     tibble,
     tidyr,
     yfR,
     zoo
+Suggests:
+    shiny,
+    bslib,
+    plotly,
+    DT,
+    scales,
+    purrr,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
