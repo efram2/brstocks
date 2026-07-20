@@ -43,13 +43,13 @@ plot_benchmark <- function(data,
   }
 
   market_label <- switch(market,
-    "BR" = "Ibovespa",
-    "US" = "S&P 500"
+                         "BR" = "Ibovespa",
+                         "US" = "S&P 500"
   )
 
   ggplot2::ggplot(data, ggplot2::aes(x = ref_date)) +
-    ggplot2::geom_line(ggplot2::aes(y = coluna_y), color = "#1f77b4") +
-    ggplot2::geom_line(ggplot2::aes(y = ma), color = "#d62728") +
+    ggplot2::geom_line(ggplot2::aes(y = coluna_y), color = brstocks_cor_azul) +
+    ggplot2::geom_line(ggplot2::aes(y = ma), color = brstocks_cor_vermelho) +
     ggplot2::theme_minimal() +
     ggplot2::labs(
       title    = paste0(market_label, " - ",

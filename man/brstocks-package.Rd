@@ -9,7 +9,7 @@
 Provides tools to retrieve and analyze historical stock data from the Brazilian stock exchange (B3) and other markets via Yahoo Finance. Includes functions for calculating returns, beta, correlation and covariance matrices, supporting quantitative finance analysis.
 }
 \author{
-\strong{Maintainer}: João Paulo dos Santos Pereira Barbosa \email{joao.31582129@gmail.com}
+\strong{Maintainer}: Joao Paulo dos Santos Pereira Barbosa \email{joao.31582129@gmail.com}
 
 }
 \keyword{internal}

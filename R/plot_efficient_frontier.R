@@ -28,7 +28,7 @@ plot_efficient_frontier <- function(efficient_frontier_data) {
   ggplot2::ggplot(efficient_frontier_data,
                   ggplot2::aes(x = risco, y = retorno, color = sharpe)) +
     ggplot2::geom_point(alpha = 0.5, size = 0.8) +
-    ggplot2::scale_color_gradient(low = "#d62728", high = "#1f77b4") +
+    ggplot2::scale_color_gradient(low = brstocks_cor_vermelho, high = brstocks_cor_azul) +
     ggplot2::theme_minimal() +
     ggplot2::labs(
       title   = "Efficient Frontier",

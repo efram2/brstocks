@@ -4,28 +4,59 @@
 \alias{calc_efficient_frontier}
 \title{Simulate portfolios to build the efficient frontier}
 \usage{
-calc_efficient_frontier(stock_data, n_portfolios = 10000)
+calc_efficient_frontier(
+  stock_data = NULL,
+  n_portfolios = 10000,
+  risk_free = 0,
+  annualize = FALSE,
+  periods_per_year = 252,
+  expected_returns = NULL,
+  cov_matrix = NULL
+)
 }
 \arguments{
 \item{stock_data}{A tibble returned by \code{\link{get_stocks}}, containing
-two or more tickers.}
+two or more tickers. Can be omitted if both \code{expected_returns} and
+\code{cov_matrix} are supplied directly.}
 
 \item{n_portfolios}{Integer. Number of random portfolios to simulate.
 Default is \code{10000}. Higher values produce smoother frontiers.}
+
+\item{risk_free}{Numeric. Risk-free rate used in the Sharpe ratio, at the
+same frequency as \code{stock_data}'s returns (daily by default).
+Default is \code{0}.}
+
+\item{annualize}{Logical. If \code{TRUE}, annualizes \code{retorno} and
+\code{risco} assuming \code{periods_per_year} trading periods.
+Default is \code{FALSE}.}
+
+\item{periods_per_year}{Integer. Used only when \code{annualize = TRUE}.
+Default is \code{252} (daily data).}
+
+\item{expected_returns}{Optional. A tibble previously computed with
+\code{\link{calc_expected_return}}. Supplying this avoids recomputing it
+from \code{stock_data}, and lets you reuse the same variable across
+multiple calls (e.g. while trying different \code{risk_free} values).}
+
+\item{cov_matrix}{Optional. A matrix previously computed with
+\code{\link{calc_covariance_matrix}}. Same rationale as
+\code{expected_returns}.}
 }
 \value{
 A tibble with \code{n_portfolios} rows and the following columns:
 \describe{
 \item{retorno}{Expected return of the portfolio}
 \item{risco}{Portfolio risk (standard deviation)}
-\item{sharpe}{Sharpe ratio (return / risk)}
+\item{sharpe}{Sharpe ratio ((return - risk_free) / risk)}
+\item{pesos}{List-column: named numeric vector of weights per ticker}
 }
 }
 \description{
 Uses Monte Carlo simulation to generate a large number of random portfolios
-and compute their expected return, risk, and Sharpe ratio. The resulting
-dataset can be plotted with \code{\link{plot_efficient_frontier}} to
-visualize the efficient frontier.
+and compute their expected return, risk, Sharpe ratio, and asset weights.
+The resulting dataset can be plotted with \code{\link{plot_efficient_frontier}}
+to visualize the efficient frontier, or used to recover the weights of any
+simulated portfolio (e.g. the one with the highest Sharpe ratio).
 }
 \details{
 Portfolio weights are drawn from a uniform distribution and normalized to
@@ -33,12 +64,29 @@ sum to 1, ensuring full investment with no short-selling. Portfolio risk is
 computed as:
 \deqn{\sigma_p = \sqrt{w^T \Sigma w}}
 where \eqn{w} is the weight vector and \eqn{\Sigma} is the covariance matrix.
+
+Weights are generated all at once as a matrix (vectorized), rather than in
+a per-iteration loop, which is considerably faster for large
+\code{n_portfolios}.
 }
 \examples{
 \dontrun{
 acoes <- get_stocks(c("PETR4", "VALE3", "ITUB4", "BBDC4"))
-fronteira <- calc_efficient_frontier(acoes, n_portfolios = 10000)
+
+# Recommended: compute inputs once, reuse the variables
+retornos_esperados <- calc_expected_return(acoes)
+matriz_cov         <- calc_covariance_matrix(acoes)
+fronteira <- calc_efficient_frontier(
+  acoes, n_portfolios = 10000,
+  expected_returns = retornos_esperados, cov_matrix = matriz_cov
+)
 plot_efficient_frontier(fronteira)
+
+# Also supported: pass only stock_data (computed internally)
+fronteira <- calc_efficient_frontier(acoes, n_portfolios = 10000)
+
+# Weights of the highest-Sharpe simulated portfolio
+fronteira[which.max(fronteira$sharpe), ]$pesos[[1]]
 }
 
 }
