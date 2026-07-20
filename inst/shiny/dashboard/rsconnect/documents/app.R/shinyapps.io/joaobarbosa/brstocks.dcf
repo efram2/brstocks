@@ -1,0 +1,10 @@
+name: brstocks
+title: brstocks — Portfolio Simulator
+username: joaobarbosa
+account: joaobarbosa
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 17625848
+bundleId: 12295148
+url: https://joaobarbosa.shinyapps.io/brstocks/
+version: 1

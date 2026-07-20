@@ -171,6 +171,8 @@ see portfolio composition without writing any code.
 brstocks::run_dashboard()
 ```
 
+🔗 **Try it online without installing anything:** https://joaobarbosa.shinyapps.io/brstocks/
+
 **Tabs:**
 
 - **Efficient Frontier** — simulated portfolios, colored by Sharpe ratio, with the minimum-variance / maximum-Sharpe / maximum-return portfolios highlighted. Hover over any point to see its composition.
