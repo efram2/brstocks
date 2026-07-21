@@ -30,16 +30,16 @@ get_risk_free <- function(rate = "cdi", from = NULL, to = NULL) {
 
   rate <- match.arg(rate, c("cdi", "selic"))
 
-  if (is.null(from)) from <- Sys.Date() - 365
-  if (is.null(to))   to   <- Sys.Date()
+  from <- .normalize_date(from, TRUE)
+  to   <- .normalize_date(to, FALSE)
 
-  from_chr <- as.character(as.Date(from))
-  to_chr   <- as.character(as.Date(to))
+  from_chr <- as.character(from)
+  to_chr   <- as.character(to)
 
   brutos <- switch(rate,
                    "cdi"   = brfinance::get_cdi_rate(start_date = from_chr, end_date = to_chr,
                                                      language = "eng", labels = FALSE),
-                   "selic" = brfinance:::.get_sgs_series(11, start_date = from_chr, end_date = to_chr)
+                   "selic" = .get_sgs_series(11, start_date = from_chr, end_date = to_chr)
   )
 
   dplyr::transmute(

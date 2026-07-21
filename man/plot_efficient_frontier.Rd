@@ -24,6 +24,12 @@ of risk.
 Portfolios with higher Sharpe ratios (blue) represent better risk-adjusted
 returns. The portfolio with the highest Sharpe ratio is known as the
 tangency portfolio.
+
+The subtitle reports the return frequency (\code{freq_data}) and whether
+values are annualized, read from attributes attached by
+\code{\link{calc_efficient_frontier}} -- since that choice materially
+changes the scale of the axes, it's surfaced on the plot rather than left
+implicit.
 }
 \examples{
 \dontrun{

@@ -34,9 +34,14 @@ daily data, more observations than yearly).}
 
 \item{na_method}{Character. Passed to \code{.prepare_returns_matrix()}.}
 
-\item{expected_returns}{Optional. Pre-computed expected returns.}
+\item{expected_returns}{Optional. Pre-computed expected returns, e.g. from
+\code{\link{calc_expected_return}}. Must be computed at the same
+\code{freq_data} as this call, or annualization will be inconsistent
+(a warning is raised if a frequency mismatch is detected).}
 
-\item{cov_matrix}{Optional. Pre-computed covariance matrix.}
+\item{cov_matrix}{Optional. Pre-computed covariance matrix, e.g. from
+\code{\link{calc_covariance_matrix}}. Same frequency caveat as
+\code{expected_returns} applies.}
 }
 \value{
 A tibble with \code{n_portfolios} rows and the following columns:
@@ -76,6 +81,11 @@ plot_efficient_frontier(fronteira)
 
 # Also supported: pass only stock_data (computed internally)
 fronteira <- calc_efficient_frontier(acoes, n_portfolios = 10000)
+
+# Also supported: pass only the precomputed inputs, no stock_data
+fronteira <- calc_efficient_frontier(
+  expected_returns = retornos_esperados, cov_matrix = matriz_cov
+)
 
 # Weights of the highest-Sharpe simulated portfolio
 fronteira[which.max(fronteira$sharpe), ]$pesos[[1]]

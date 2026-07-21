@@ -4,7 +4,11 @@
 \alias{calc_expected_return}
 \title{Calculate the expected return of one or more stocks}
 \usage{
-calc_expected_return(stock_data, na_method = "intersection")
+calc_expected_return(
+  stock_data,
+  na_method = "intersection",
+  freq_data = "monthly"
+)
 }
 \arguments{
 \item{stock_data}{A tibble returned by \code{\link{get_stocks}}.}
@@ -12,6 +16,12 @@ calc_expected_return(stock_data, na_method = "intersection")
 \item{na_method}{Character. How to handle missing observations.
 One of "intersection" (default), "pairwise", or "locf".
 See \code{.prepare_returns_matrix} for details.}
+
+\item{freq_data}{Character. Frequency at which returns are aggregated
+before averaging. One of "daily", "weekly", or \code{"monthly"}
+(default). Matches the default of \code{\link{calc_efficient_frontier}}
+so that composing these functions manually (see examples) produces
+consistent results out of the box.}
 }
 \value{
 A tibble with columns:
@@ -26,9 +36,13 @@ log-adjusted returns. This is the maximum likelihood estimator commonly
 used in quantitative finance and portfolio theory.
 }
 \details{
-Returns are computed at the frequency of the input data (daily by default).
-To annualize, multiply by the number of trading periods per year
-(252 for daily, 52 for weekly, 12 for monthly).
+Returns are computed at the frequency given by \code{freq_data}. To
+annualize, multiply by the number of periods per year (252 for daily,
+52 for weekly, 12 for monthly). If you pass the result into
+\code{\link{calc_efficient_frontier}} via its \code{expected_returns}
+argument, make sure to use the same \code{freq_data} in both calls --
+otherwise annualization will be inconsistent (a warning is raised in
+that case).
 }
 \examples{
 \dontrun{

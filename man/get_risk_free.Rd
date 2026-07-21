@@ -7,8 +7,7 @@
 get_risk_free(rate = "cdi", from = NULL, to = NULL)
 }
 \arguments{
-\item{rate}{Character. \code{"cdi"} (default, SGS series 12) or
-\code{"selic"} (SGS series 11).}
+\item{rate}{Character. \code{"cdi"} (default) or \code{"selic"}.}
 
 \item{from}{Start date. Defaults to 365 days before today.}
 
@@ -19,9 +18,17 @@ A tibble with columns \code{ref_date} and \code{taxa} (daily rate,
 as a decimal -- e.g. \code{0.0004} means 0.04\% a.d.).
 }
 \description{
-Retrieves the daily CDI or SELIC rate series from the Brazilian Central
-Bank's open data API (SGS -- Sistema Gerenciador de Séries Temporais).
-Useful as the \code{risk_free} input for \code{\link{calc_efficient_frontier}}.
+Thin wrapper around \pkg{brfinance}'s \code{get_cdi_rate()} and
+\code{get_selic_rate()}, which fetch these series from the Brazilian
+Central Bank's open data API (SGS -- Sistema Gerenciador de Séries
+Temporais). Useful as the \code{risk_free} input for
+\code{\link{calc_efficient_frontier}}.
+}
+\details{
+brstocks used to hit the BCB/SGS API directly for this. It now delegates
+to \pkg{brfinance} instead, which already wraps that API (with its own
+internal series-fetching helper) and is a dependency shared with
+brstocks' sibling package.
 }
 \examples{
 \dontrun{
