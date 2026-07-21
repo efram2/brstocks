@@ -61,6 +61,16 @@ DIC <- list(
     markowitz_texto = "A Fronteira Eficiente de Markowitz mostra, para cada nível de risco, a carteira com o maior retorno esperado possível combinando os ativos escolhidos. A ideia central da Teoria Moderna de Portfólio (Harry Markowitz, 1952) é que diversificar — combinar ativos que não se movem exatamente da mesma forma — reduz o risco total da carteira sem necessariamente reduzir o retorno esperado. Isso acontece porque, quando um ativo cai, outro pode subir ou ficar estável, suavizando as oscilações do conjunto. Cada ponto na nuvem da aba \"Efficient Frontier\" é uma carteira simulada com pesos diferentes entre os ativos; o objetivo é ficar perto da borda superior esquerda da nuvem — onde, para o risco assumido, o retorno esperado é o maior possível.",
     etf_titulo = "O que é um ETF?",
     etf_texto = "Um ETF (Exchange Traded Fund, ou Fundo de Índice) é negociado na bolsa como uma ação comum, mas seu objetivo é replicar o desempenho de um índice de referência, em vez de representar uma empresa só. Por isso, os ativos marcados como ETF na tabela abaixo estão ligados a um índice específico — o Ibovespa, o S&P 500, o preço do ouro, um índice global de ações etc.",
+    pressupostos_titulo = "Pressupostos do modelo (leia antes de tirar conclusões)",
+    pressupostos_itens = c(
+      "Rebalanceamento diário assumido: a simulação mantém os pesos fixos como se a carteira fosse rebalanceada todo dia útil — na prática isso geraria custos de corretagem e impostos não considerados aqui.",
+      "A fronteira é uma aproximação por simulação (Monte Carlo), não um otimizador exato — os pontos de mínima variância / máximo Sharpe / máximo retorno são os melhores encontrados entre as carteiras simuladas, não o ótimo matemático.",
+      "O CDI é usado como proxy da taxa livre de risco, obtido direto do Banco Central — não de um fundo específico, para não misturar taxa de administração ou erro de rastreamento na comparação.",
+      "O retorno anualizado do Simulador de Aportes é uma aproximação (não uma TIR/XIRR ponderada pelo momento de cada aporte) — serve como ordem de grandeza, não como retorno exato de fundo.",
+      "Todos os cálculos usam retornos logarítmicos, anualizados por 252 dias úteis.",
+      "Por padrão, os cálculos rodam sobre dados mensais, não diários — isso reduz ruído e atenua distorções na correlação entre ativos de mercados com calendários diferentes (ex.: B3 vs. NYSE).",
+      "O período padrão do simulador é de 5 anos — um ano de dados diários vira só ~12 observações mensais, pouco para uma matriz de covariância estável."
+    ),
     aportes_titulo_aba = "Simulador de Aportes",
     carteira_aportes_label = "Simular aportes em qual carteira?",
     aporte_inicial_label = "Aporte inicial (R$)",
@@ -106,6 +116,16 @@ DIC <- list(
     markowitz_texto = "The Markowitz Efficient Frontier shows, for each level of risk, the portfolio with the highest possible expected return combining the chosen assets. The core idea of Modern Portfolio Theory (Harry Markowitz, 1952) is that diversifying — combining assets that don't move in exactly the same way — reduces a portfolio's total risk without necessarily reducing its expected return. This happens because when one asset drops, another may rise or hold steady, smoothing out the swings of the combined portfolio. Every point in the cloud on the \"Efficient Frontier\" tab is a simulated portfolio with different weights across assets; the goal is to sit near the upper-left edge of the cloud, where expected return is the highest possible for the risk taken on.",
     etf_titulo = "What is an ETF?",
     etf_texto = "An ETF (Exchange Traded Fund) trades on the exchange like a regular stock, but its goal is to replicate the performance of a reference index rather than represent a single company. That's why the assets marked as ETFs in the table below are tied to a specific index — the Ibovespa, the S&P 500, the price of gold, a global equity index, and so on.",
+    pressupostos_titulo = "Model assumptions (read before drawing conclusions)",
+    pressupostos_itens = c(
+      "Daily rebalancing assumed: the simulation keeps weights fixed as if the portfolio were rebalanced every trading day -- in practice this would incur brokerage costs and taxes not modeled here.",
+      "The frontier is a Monte Carlo approximation, not an exact optimizer -- the minimum-variance / maximum-Sharpe / maximum-return points are the best found among the simulated portfolios, not the true mathematical optimum.",
+      "CDI is used as the risk-free proxy, fetched directly from the Central Bank -- not from a specific fund, to avoid mixing in management fees or tracking error.",
+      "The annualized return in the Contributions Simulator is an approximation (not a money-weighted IRR/XIRR) -- it's an order-of-magnitude comparison, not an exact fund-style return.",
+      "All calculations use log returns, annualized using 252 trading days.",
+      "By default, calculations run on monthly data, not daily -- this reduces noise and mitigates correlation distortions between assets on markets with different trading calendars (e.g. B3 vs. NYSE).",
+      "The simulator's default date range is 5 years -- a year of daily data only yields ~12 monthly observations, too few for a stable covariance matrix."
+    ),
     aportes_titulo_aba = "Contribution Simulator",
     carteira_aportes_label = "Simulate contributions into which portfolio?",
     aporte_inicial_label = "Initial contribution (R$)",
@@ -259,6 +279,11 @@ ui <- page_sidebar(
         class = "alert alert-secondary",
         style = "font-size: 0.9em; margin-top: 20px;",
         uiOutput("observacao_alinhamento")
+      ),
+      div(
+        class = "alert alert-secondary",
+        style = "font-size: 0.85em; margin-top: 12px;",
+        uiOutput("pressupostos_modelo")
       )
     )
   ),
@@ -632,6 +657,19 @@ server <- function(input, output, session) {
     tagList(
       strong(d$observacao_alinhamento_titulo),
       p(class = "text-justify", d$observacao_alinhamento_texto)
+    )
+  })
+
+  # ---- Model assumptions (condensed version of the README section) ----
+  output$pressupostos_modelo <- renderUI({
+    d <- dic()
+    tagList(
+      strong(d$pressupostos_titulo),
+      tags$ul(
+        class = "text-justify",
+        style = "padding-left: 20px; margin-top: 8px; margin-bottom: 0;",
+        lapply(d$pressupostos_itens, tags$li)
+      )
     )
   })
 }
