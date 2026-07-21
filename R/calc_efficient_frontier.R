@@ -10,8 +10,13 @@
 #' @param annualize Logical. If \code{TRUE}, annualizes return and risk.
 #' @param periods_per_year Integer. Default 252 for daily, 12 for monthly.
 #' @param na_method Character. Passed to \code{.prepare_returns_matrix()}.
-#' @param expected_returns Optional. Pre-computed expected returns.
-#' @param cov_matrix Optional. Pre-computed covariance matrix.
+#' @param expected_returns Optional. Pre-computed expected returns, e.g. from
+#'   \code{\link{calc_expected_return}}. Must be computed at the same
+#'   \code{freq_data} as this call, or annualization will be inconsistent
+#'   (a warning is raised if a frequency mismatch is detected).
+#' @param cov_matrix Optional. Pre-computed covariance matrix, e.g. from
+#'   \code{\link{calc_covariance_matrix}}. Same frequency caveat as
+#'   \code{expected_returns} applies.
 #'
 #' @return A tibble with \code{n_portfolios} rows and the following columns:
 #' \describe{
@@ -48,6 +53,11 @@
 #' # Also supported: pass only stock_data (computed internally)
 #' fronteira <- calc_efficient_frontier(acoes, n_portfolios = 10000)
 #'
+#' # Also supported: pass only the precomputed inputs, no stock_data
+#' fronteira <- calc_efficient_frontier(
+#'   expected_returns = retornos_esperados, cov_matrix = matriz_cov
+#' )
+#'
 #' # Weights of the highest-Sharpe simulated portfolio
 #' fronteira[which.max(fronteira$sharpe), ]$pesos[[1]]
 #' }
@@ -74,30 +84,52 @@ calc_efficient_frontier <- function(stock_data = NULL,
                                monthly = 12)
   }
 
+  # Avisa se os inputs pré-computados vieram de uma frequência diferente da
+  # usada aqui -- essa era exatamente a causa do bug de anualização
+  # silenciosamente errada quando se compõe calc_expected_return()/
+  # calc_covariance_matrix() manualmente com calc_efficient_frontier().
+  freq_er  <- attr(expected_returns, "freq_data")
+  freq_cov <- attr(cov_matrix, "freq_data")
+  if (!is.null(freq_er) && freq_er != freq_data) {
+    warning(sprintf(
+      "expected_returns was computed with freq_data = '%s' but calc_efficient_frontier() is using freq_data = '%s'; annualization will be inconsistent.",
+      freq_er, freq_data), call. = FALSE)
+  }
+  if (!is.null(freq_cov) && freq_cov != freq_data) {
+    warning(sprintf(
+      "cov_matrix was computed with freq_data = '%s' but calc_efficient_frontier() is using freq_data = '%s'; annualization will be inconsistent.",
+      freq_cov, freq_data), call. = FALSE)
+  }
+
+  # Só monta e agrega a matriz de retornos quando de fato precisamos dela --
+  # ou seja, quando pelo menos um de expected_returns/cov_matrix não foi
+  # fornecido. Isso evita recomputação desnecessária quando os dois já vêm
+  # prontos, e evita chamar .prepare_returns_matrix(NULL, ...) quando
+  # stock_data não foi passado (uso documentado e válido nesse caso).
   if (is.null(expected_returns) || is.null(cov_matrix)) {
     if (is.null(stock_data)) {
       stop("Provide either 'stock_data', or both 'expected_returns' and 'cov_matrix'.",
            call. = FALSE)
     }
-  }
 
-  # Prepara a matriz de retornos, alinhando datas
-  ret_matrix <- .prepare_returns_matrix(stock_data, na_method = na_method)
+    # Prepara a matriz de retornos, alinhando datas
+    ret_matrix <- .prepare_returns_matrix(stock_data, na_method = na_method)
 
-  # Agrega para frequência desejada se necessário
-  if (freq_data != "daily") {
-    ret_matrix <- .aggregate_returns(ret_matrix,
-                                     freq = freq_data,
-                                     dates = attr(ret_matrix, "dates"))
-  }
+    # Agrega para frequência desejada se necessário
+    if (freq_data != "daily") {
+      ret_matrix <- .aggregate_returns(ret_matrix,
+                                       freq = freq_data,
+                                       dates = attr(ret_matrix, "dates"))
+    }
 
-  # Cálculo dos retornos esperados e covariância a partir da matriz preparada
-  if (is.null(expected_returns)) {
-    expected_returns <- .calc_expected_returns_from_matrix(ret_matrix)
-  }
+    # Cálculo dos retornos esperados e covariância a partir da matriz preparada
+    if (is.null(expected_returns)) {
+      expected_returns <- .calc_expected_returns_from_matrix(ret_matrix)
+    }
 
-  if (is.null(cov_matrix)) {
-    cov_matrix <- stats::cov(ret_matrix)
+    if (is.null(cov_matrix)) {
+      cov_matrix <- stats::cov(ret_matrix)
+    }
   }
 
   tickers <- expected_returns$ticker
@@ -122,12 +154,15 @@ calc_efficient_frontier <- function(stock_data = NULL,
 
   sharpe_vec <- (ret_vec - risk_free) / risco_vec
 
-  dplyr::tibble(
+  resultado <- dplyr::tibble(
     retorno = ret_vec,
     risco = risco_vec,
     sharpe = sharpe_vec,
     pesos = lapply(seq_len(n_portfolios), function(i) pesos_mat[i, ])
   )
+  attr(resultado, "freq_data") <- freq_data
+  attr(resultado, "annualized") <- annualize
+  resultado
 }
 
 #' Agrega retornos para frequência especificada

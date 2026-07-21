@@ -15,9 +15,19 @@
 #' @param na_method Character. How to handle missing observations.
 #'   One of "intersection" (default), "pairwise", or "locf".
 #'   See \code{.prepare_returns_matrix} for details.
+#' @param freq_data Character. Frequency at which returns are aggregated
+#'   before computing correlation. One of "daily", "weekly", or
+#'   \code{"monthly"} (default). Matches the default of
+#'   \code{\link{calc_efficient_frontier}}.
 #'
 #' @return A named numeric matrix of dimensions \eqn{n \times n}, where
 #'   \eqn{n} is the number of unique tickers.
+#'
+#' @details
+#' Daily correlation between assets that trade on different exchanges (e.g.
+#' B3 vs. NYSE) tends to be understated, because information from one market
+#' does not reach the other instantaneously (the "Epps effect"). Aggregating
+#' to a lower frequency, as done by default here, mitigates this.
 #'
 #' @examples
 #' \dontrun{
@@ -26,7 +36,20 @@
 #' }
 #'
 #' @export
-calc_correlation_matrix <- function(stock_data, na_method = "intersection") {
+calc_correlation_matrix <- function(stock_data,
+                                    na_method = "intersection",
+                                    freq_data = "monthly") {
+
+  freq_data <- match.arg(freq_data, c("daily", "weekly", "monthly"))
+
   ret_matrix <- .prepare_returns_matrix(stock_data, na_method = na_method)
-  stats::cor(ret_matrix)
+
+  if (freq_data != "daily") {
+    ret_matrix <- .aggregate_returns(ret_matrix, freq = freq_data,
+                                     dates = attr(ret_matrix, "dates"))
+  }
+
+  resultado <- stats::cor(ret_matrix)
+  attr(resultado, "freq_data") <- freq_data
+  resultado
 }

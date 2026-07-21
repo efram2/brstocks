@@ -1,4 +1,3 @@
-.normalize_date <- get(".normalize_date", envir = asNamespace("brstocks"))
 #' Normalize user-supplied dates
 #'
 #' Internal helper function used throughout the package to normalize

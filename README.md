@@ -126,6 +126,13 @@ fronteira <- calc_efficient_frontier(
 plot_efficient_frontier(fronteira)
 ```
 
+> **Note on frequency:** `calc_efficient_frontier()` aggregates to monthly
+> returns by default (`freq_data = "monthly"`). If you precompute
+> `expected_returns` / `cov_matrix` yourself, as above, make sure they're
+> built on the frequency you actually want the frontier to use — or skip
+> precomputing them and let `calc_efficient_frontier()` derive everything
+> internally from raw `stock_data`.
+
 Every `plot_*` and `calc_efficient_frontier()` function also accepts raw
 `stock_data` directly and will compute what it needs internally — so the
 package works fine for quick one-off exploration too. The point of the
@@ -147,13 +154,49 @@ All `get_*` functions support flexible date inputs: `"YYYY-MM-DD"`, `Date`, or `
 **Analytics (`calc_*`)**
 
 - `calc_beta()` → Beta coefficient relative to a benchmark
-- `calc_expected_return()` → Mean historical log return per ticker
+- `calc_expected_return()` → Mean historical log return per ticker; aggregates to monthly returns by default (`freq_data = "monthly"`)
 - `calc_variance()` → Return variance per ticker
-- `calc_covariance_matrix()` → Pairwise covariance matrix
-- `calc_correlation_matrix()` → Pairwise Pearson correlation matrix
+- `calc_covariance_matrix()` → Pairwise covariance matrix; aggregates to monthly returns by default (`freq_data = "monthly"`)
+- `calc_correlation_matrix()` → Pairwise Pearson correlation matrix; aggregates to monthly returns by default (`freq_data = "monthly"`)
 - `calc_avg_risk_free()` → Average daily CDI/SELIC rate over a period
-- `calc_efficient_frontier()` → Monte Carlo portfolio simulation (Markowitz, 1952); accepts precomputed `expected_returns`/`cov_matrix`
+- `calc_efficient_frontier()` → Monte Carlo portfolio simulation (Markowitz, 1952); accepts precomputed `expected_returns`/`cov_matrix`; aggregates to monthly returns by default (`freq_data = "monthly"`)
 - `calc_key_portfolios()` → Extracts the minimum-variance, maximum-Sharpe, and maximum-return portfolios from a simulated frontier
+
+All `calc_*` functions above that take multi-asset `stock_data` — `calc_beta()`,
+`calc_expected_return()`, `calc_variance()`, `calc_covariance_matrix()`,
+`calc_correlation_matrix()`, and `calc_efficient_frontier()` — align the
+input series internally via an `na_method` argument (`"intersection"` by
+default, or `"pairwise"` / `"locf"`) before computing anything. See
+[Date alignment across assets](#date-alignment-across-assets) below.
+
+`calc_expected_return()`, `calc_covariance_matrix()`, `calc_correlation_matrix()`,
+and `calc_efficient_frontier()` share a `freq_data` argument
+(`"daily"` / `"weekly"` / `"monthly"`, default `"monthly"`) and attach it as
+an attribute to their output. If you compose them manually — e.g. pass a
+`calc_expected_return()` result into `calc_efficient_frontier()`'s
+`expected_returns` argument — a mismatched `freq_data` between the two
+calls now raises a warning instead of silently producing a wrong
+annualized return. `calc_beta()` and `calc_variance()` still operate on
+daily data only; they'll get the same `freq_data` argument in a future
+update.
+
+### Date alignment across assets
+
+Assets can have different trading days for several reasons: local holidays
+(B3 vs. NYSE), trading suspensions, recently launched ETFs, or missing
+historical data for a given ticker. To keep every calculation consistent,
+the functions listed above align the input series internally before
+computing anything, controlled by `na_method`:
+
+- `"intersection"` (default) — keeps only the dates where *all* selected
+  assets have data. Safest option; may reduce the number of observations.
+- `"pairwise"` — computes each pairwise statistic (e.g. each cell of a
+  correlation matrix) over the dates common to that specific pair of
+  assets, rather than the intersection across all assets at once.
+- `"locf"` — last observation carried forward, filling gaps instead of
+  dropping dates.
+
+When observations are dropped, a warning reports how many were removed.
 
 **Visualization (`plot_*`)**
 
@@ -210,6 +253,13 @@ or a production-grade backtest:
 5. **Log returns throughout**, annualized using 252 trading days per year
    (not 365 calendar days), consistent with standard quantitative-finance
    convention.
+6. **Efficient frontier computed on monthly-aggregated returns by default.**
+   `calc_efficient_frontier()` uses `freq_data = "monthly"`, aggregating
+   daily log returns into monthly ones (log returns are additive, so this
+   is a simple sum) before simulating portfolios. This reduces noise and
+   produces more stable correlation/covariance estimates than raw daily
+   data. Other functions (`calc_beta()`, `calc_expected_return()`, etc.)
+   still operate on daily data by default.
 
 ## Data Source
 

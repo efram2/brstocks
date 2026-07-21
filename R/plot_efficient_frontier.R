@@ -15,6 +15,13 @@
 #'
 #' @return A \code{ggplot2} object.
 #'
+#' @details
+#' The subtitle reports the return frequency (\code{freq_data}) and whether
+#' values are annualized, read from attributes attached by
+#' \code{\link{calc_efficient_frontier}} -- since that choice materially
+#' changes the scale of the axes, it's surfaced on the plot rather than left
+#' implicit.
+#'
 #' @examples
 #' \dontrun{
 #' acoes <- get_stocks(c("PETR4", "VALE3", "ITUB4", "BBDC4"))
@@ -25,16 +32,28 @@
 #' @export
 plot_efficient_frontier <- function(efficient_frontier_data) {
 
+  freq_data  <- attr(efficient_frontier_data, "freq_data")
+  annualized <- attr(efficient_frontier_data, "annualized")
+
+  subtitulo <- if (!is.null(freq_data)) {
+    freq_label <- c(daily = "daily", weekly = "weekly", monthly = "monthly")[[freq_data]]
+    paste0("Based on ", freq_label, " returns",
+           if (isTRUE(annualized)) " (annualized)" else " (not annualized)")
+  } else {
+    NULL
+  }
+
   ggplot2::ggplot(efficient_frontier_data,
                   ggplot2::aes(x = risco, y = retorno, color = sharpe)) +
     ggplot2::geom_point(alpha = 0.5, size = 0.8) +
     ggplot2::scale_color_gradient(low = brstocks_cor_vermelho, high = brstocks_cor_azul) +
     ggplot2::theme_minimal() +
     ggplot2::labs(
-      title   = "Efficient Frontier",
-      x       = "Risk (Standard Deviation)",
-      y       = "Expected Return",
-      color   = "Sharpe Ratio",
-      caption = "Source: Yahoo Finance via yfR"
+      title    = "Efficient Frontier",
+      subtitle = subtitulo,
+      x        = "Risk (Standard Deviation)",
+      y        = "Expected Return",
+      color    = "Sharpe Ratio",
+      caption  = "Source: Yahoo Finance via yfR"
     )
 }
