@@ -1,31 +1,22 @@
 #' Simulate portfolios to build the efficient frontier
 #'
-#' Uses Monte Carlo simulation to generate a large number of random portfolios
-#' and compute their expected return, risk, Sharpe ratio, and asset weights.
-#' The resulting dataset can be plotted with \code{\link{plot_efficient_frontier}}
-#' to visualize the efficient frontier, or used to recover the weights of any
-#' simulated portfolio (e.g. the one with the highest Sharpe ratio).
-#'
-#' @param stock_data A tibble returned by \code{\link{get_stocks}}, containing
-#'   two or more tickers. Can be omitted if both \code{expected_returns} and
-#'   \code{cov_matrix} are supplied directly.
+#' @param stock_data A tibble returned by \code{\link{get_stocks}}.
 #' @param n_portfolios Integer. Number of random portfolios to simulate.
-#'   Default is \code{10000}. Higher values produce smoother frontiers.
-#' @param risk_free Numeric. Risk-free rate used in the Sharpe ratio, at the
-#'   same frequency as \code{stock_data}'s returns (daily by default).
-#'   Default is \code{0}.
-#' @param annualize Logical. If \code{TRUE}, annualizes \code{retorno} and
-#'   \code{risco} assuming \code{periods_per_year} trading periods.
-#'   Default is \code{FALSE}.
-#' @param periods_per_year Integer. Used only when \code{annualize = TRUE}.
-#'   Default is \code{252} (daily data).
-#' @param expected_returns Optional. A tibble previously computed with
-#'   \code{\link{calc_expected_return}}. Supplying this avoids recomputing it
-#'   from \code{stock_data}, and lets you reuse the same variable across
-#'   multiple calls (e.g. while trying different \code{risk_free} values).
-#' @param cov_matrix Optional. A matrix previously computed with
-#'   \code{\link{calc_covariance_matrix}}. Same rationale as
-#'   \code{expected_returns}.
+#' @param risk_free Numeric. Risk-free rate at the same frequency as returns.
+#' @param freq_data Character. Frequency for portfolio analysis.
+#'   Default is \code{"monthly"} as recommended for robust covariance
+#'   estimation and efficient frontier construction (less noise than
+#'   daily data, more observations than yearly).
+#' @param annualize Logical. If \code{TRUE}, annualizes return and risk.
+#' @param periods_per_year Integer. Default 252 for daily, 12 for monthly.
+#' @param na_method Character. Passed to \code{.prepare_returns_matrix()}.
+#' @param expected_returns Optional. Pre-computed expected returns, e.g. from
+#'   \code{\link{calc_expected_return}}. Must be computed at the same
+#'   \code{freq_data} as this call, or annualization will be inconsistent
+#'   (a warning is raised if a frequency mismatch is detected).
+#' @param cov_matrix Optional. Pre-computed covariance matrix, e.g. from
+#'   \code{\link{calc_covariance_matrix}}. Same frequency caveat as
+#'   \code{expected_returns} applies.
 #'
 #' @return A tibble with \code{n_portfolios} rows and the following columns:
 #' \describe{
@@ -62,62 +53,169 @@
 #' # Also supported: pass only stock_data (computed internally)
 #' fronteira <- calc_efficient_frontier(acoes, n_portfolios = 10000)
 #'
+#' # Also supported: pass only the precomputed inputs, no stock_data
+#' fronteira <- calc_efficient_frontier(
+#'   expected_returns = retornos_esperados, cov_matrix = matriz_cov
+#' )
+#'
 #' # Weights of the highest-Sharpe simulated portfolio
 #' fronteira[which.max(fronteira$sharpe), ]$pesos[[1]]
 #' }
 #'
 #' @export
-calc_efficient_frontier <- function(stock_data       = NULL,
-                                    n_portfolios     = 10000,
-                                    risk_free        = 0,
-                                    annualize        = FALSE,
-                                    periods_per_year = 252,
+calc_efficient_frontier <- function(stock_data = NULL,
+                                    n_portfolios = 10000,
+                                    risk_free = 0,
+                                    freq_data = "monthly",
+                                    annualize = TRUE,
+                                    periods_per_year = NULL,
+                                    na_method = "intersection",
                                     expected_returns = NULL,
-                                    cov_matrix       = NULL) {
+                                    cov_matrix = NULL) {
 
+  # Validação de frequência
+  freq_data <- match.arg(freq_data, c("daily", "weekly", "monthly"))
+
+  # Define periods_per_year automaticamente se não fornecido
+  if (is.null(periods_per_year)) {
+    periods_per_year <- switch(freq_data,
+                               daily = 252,
+                               weekly = 52,
+                               monthly = 12)
+  }
+
+  # Avisa se os inputs pré-computados vieram de uma frequência diferente da
+  # usada aqui -- essa era exatamente a causa do bug de anualização
+  # silenciosamente errada quando se compõe calc_expected_return()/
+  # calc_covariance_matrix() manualmente com calc_efficient_frontier().
+  freq_er  <- attr(expected_returns, "freq_data")
+  freq_cov <- attr(cov_matrix, "freq_data")
+  if (!is.null(freq_er) && freq_er != freq_data) {
+    warning(sprintf(
+      "expected_returns was computed with freq_data = '%s' but calc_efficient_frontier() is using freq_data = '%s'; annualization will be inconsistent.",
+      freq_er, freq_data), call. = FALSE)
+  }
+  if (!is.null(freq_cov) && freq_cov != freq_data) {
+    warning(sprintf(
+      "cov_matrix was computed with freq_data = '%s' but calc_efficient_frontier() is using freq_data = '%s'; annualization will be inconsistent.",
+      freq_cov, freq_data), call. = FALSE)
+  }
+
+  # Só monta e agrega a matriz de retornos quando de fato precisamos dela --
+  # ou seja, quando pelo menos um de expected_returns/cov_matrix não foi
+  # fornecido. Isso evita recomputação desnecessária quando os dois já vêm
+  # prontos, e evita chamar .prepare_returns_matrix(NULL, ...) quando
+  # stock_data não foi passado (uso documentado e válido nesse caso).
   if (is.null(expected_returns) || is.null(cov_matrix)) {
     if (is.null(stock_data)) {
       stop("Provide either 'stock_data', or both 'expected_returns' and 'cov_matrix'.",
            call. = FALSE)
     }
+
+    # Prepara a matriz de retornos, alinhando datas
+    ret_matrix <- .prepare_returns_matrix(stock_data, na_method = na_method)
+
+    # Agrega para frequência desejada se necessário
+    if (freq_data != "daily") {
+      ret_matrix <- .aggregate_returns(ret_matrix,
+                                       freq = freq_data,
+                                       dates = attr(ret_matrix, "dates"))
+    }
+
+    # Cálculo dos retornos esperados e covariância a partir da matriz preparada
+    if (is.null(expected_returns)) {
+      expected_returns <- .calc_expected_returns_from_matrix(ret_matrix)
+    }
+
+    if (is.null(cov_matrix)) {
+      cov_matrix <- stats::cov(ret_matrix)
+    }
   }
 
-  # Step 1: expected returns and covariance matrix -- reuse if supplied,
-  # otherwise compute from stock_data
-  retornos <- if (is.null(expected_returns)) calc_expected_return(stock_data) else expected_returns
-  cov_mat  <- if (is.null(cov_matrix)) as.matrix(calc_covariance_matrix(stock_data)) else as.matrix(cov_matrix)
-
-  tickers  <- retornos$ticker
+  tickers <- expected_returns$ticker
   n_ativos <- length(tickers)
+  vetor_retornos <- expected_returns$expected_return
 
-  # Step 2: generate all random weights at once (vectorized) instead of
-  # looping n_portfolios times -- each row is normalized to sum to 1
-  # Random weights are drawn from Exponential(1) and normalized to sum to 1.
-  # This is equivalent to sampling from a Dirichlet(1, ..., 1) distribution,
-  # which is uniform over the portfolio-weight simplex. Sampling from
-  # Uniform(0, 1) and normalizing (a common shortcut) is NOT uniform over the
-  # simplex: it under-samples corner allocations (portfolios concentrated in
-  # a single asset) relative to balanced ones.
-  pesos_brutos <- matrix(stats::rexp(n_portfolios * n_ativos, rate = 1), nrow = n_portfolios)
-  pesos_mat    <- pesos_brutos / rowSums(pesos_brutos)
+  # Gera todas as carteiras aleatórias de uma vez (vetorizado)
+  # Usa distribuição Exponencial(1) normalizada -> Dirichlet(1,...,1)
+  pesos_brutos <- matrix(stats::rexp(n_portfolios * n_ativos, rate = 1),
+                         nrow = n_portfolios)
+  pesos_mat <- pesos_brutos / rowSums(pesos_brutos)
   colnames(pesos_mat) <- tickers
 
-  # Step 3: portfolio return and risk for every simulated portfolio
-  vetor_retornos <- retornos$expected_return
-  ret_vec  <- as.numeric(pesos_mat %*% vetor_retornos)
-  risco_vec <- sqrt(rowSums((pesos_mat %*% cov_mat) * pesos_mat))
+  # Retorno e risco para cada carteira
+  ret_vec <- as.numeric(pesos_mat %*% vetor_retornos)
+  risco_vec <- sqrt(rowSums((pesos_mat %*% cov_matrix) * pesos_mat))
 
   if (annualize) {
-    ret_vec   <- ret_vec * periods_per_year
+    ret_vec <- ret_vec * periods_per_year
     risco_vec <- risco_vec * sqrt(periods_per_year)
   }
 
   sharpe_vec <- (ret_vec - risk_free) / risco_vec
 
-  dplyr::tibble(
+  resultado <- dplyr::tibble(
     retorno = ret_vec,
-    risco   = risco_vec,
-    sharpe  = sharpe_vec,
-    pesos   = lapply(seq_len(n_portfolios), function(i) pesos_mat[i, ])
+    risco = risco_vec,
+    sharpe = sharpe_vec,
+    pesos = lapply(seq_len(n_portfolios), function(i) pesos_mat[i, ])
+  )
+  attr(resultado, "freq_data") <- freq_data
+  attr(resultado, "annualized") <- annualize
+  resultado
+}
+
+#' Agrega retornos para frequência especificada
+#'
+#' @keywords internal
+.aggregate_returns <- function(ret_matrix, freq = "monthly", dates = NULL) {
+
+  # Se não temos datas, usamos índices
+  if (is.null(dates)) {
+    dates <- seq.Date(from = Sys.Date() - nrow(ret_matrix) + 1,
+                      to = Sys.Date(),
+                      by = "day")
+  }
+
+  # Cria agrupadores baseados na frequência
+  grupos <- switch(freq,
+                   weekly = .week_grouping(dates),
+                   monthly = .month_grouping(dates),
+                   stop("Invalid frequency."))
+
+  ret_aggregated <- stats::aggregate(ret_matrix,
+                                     by = list(grupos),
+                                     FUN = sum,
+                                     na.rm = TRUE)
+
+  # Remove a coluna de grupo e converte para matrix
+  ret_aggregated <- as.matrix(ret_aggregated[, -1, drop = FALSE])
+
+  # Guarda as datas agregadas como atributo
+  attr(ret_aggregated, "dates") <- grupos[!duplicated(grupos)]
+
+  return(ret_aggregated)
+}
+
+#' Cria agrupamento semanal
+#' @keywords internal
+.week_grouping <- function(dates) {
+  format(dates, "%Y-W%V")
+}
+
+#' Cria agrupamento mensal
+#' @keywords internal
+.month_grouping <- function(dates) {
+  format(dates, "%Y-%m")
+}
+
+#' Calcula retornos esperados a partir da matriz
+#' @keywords internal
+.calc_expected_returns_from_matrix <- function(ret_matrix) {
+  retornos <- colMeans(ret_matrix, na.rm = TRUE)
+
+  data.frame(
+    ticker = colnames(ret_matrix),
+    expected_return = retornos
   )
 }

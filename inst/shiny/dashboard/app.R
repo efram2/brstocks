@@ -1,4 +1,11 @@
-library(remotes)
+# ============================================================
+# app.R - brstocks Shiny Dashboard
+# ============================================================
+
+# Carregar pacotes necessários
+devtools::load_all()
+library(brfinance)
+library(brstocks)
 library(shiny)
 library(bslib)
 library(dplyr)
@@ -6,12 +13,6 @@ library(tidyr)
 library(plotly)
 library(DT)
 library(scales)
-
-if (!requireNamespace("brstocks", quietly = TRUE)) {
-  remotes::install_github("efram2/brstocks")
-}
-
-library(brstocks)
 
 # ---------------------------------------------------------------------
 # Color palette. Chosen to evoke an institutional financial-market
@@ -23,6 +24,14 @@ COR_VERM <- "#C81E3A"
 COR_OURO <- "#C9A227"
 
 # ---------------------------------------------------------------------
+# Footer constants.
+# ---------------------------------------------------------------------
+GITHUB_URL <- "https://github.com/efram2/brstocks"
+
+SVG_LINKEDIN <- '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>'
+SVG_GITHUB <- '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.58 2 12.21c0 4.5 2.87 8.32 6.84 9.67.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.72-2.78.62-3.37-1.37-3.37-1.37-.46-1.2-1.11-1.52-1.11-1.52-.91-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.32.1-2.75 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 5 0c1.9-1.33 2.75-1.05 2.75-1.05.55 1.43.2 2.49.1 2.75.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.21C22 6.58 17.52 2 12 2z"/></svg>'
+
+# ---------------------------------------------------------------------
 # Language dictionary. Provides a lightweight PT/EN toggle for dashboard
 # labels, help text, and plot titles. Function and package names remain
 # in English throughout, per standard R package convention; this
@@ -30,11 +39,11 @@ COR_OURO <- "#C9A227"
 # ---------------------------------------------------------------------
 DIC <- list(
   pt = list(
+    titulo_dashboard = "brstocks - Simulação de Fronteira Eficiente de Markowitz",
     tickers_label = "Ativos (separados por vírgula)",
     periodo_label = "Período",
     benchmark_label = "Benchmark",
     n_port_label = "Nº de carteiras simuladas",
-    n_port_help = "Valores menores deixam o dashboard mais leve. 3000 já dá uma fronteira suave.",
     rf_label = "Taxa livre de risco",
     rf_manual_label = "Valor manual (freq. diária)",
     anualizar_label = "Anualizar retorno/risco (x252)",
@@ -53,6 +62,16 @@ DIC <- list(
     markowitz_texto = "A Fronteira Eficiente de Markowitz mostra, para cada nível de risco, a carteira com o maior retorno esperado possível combinando os ativos escolhidos. A ideia central da Teoria Moderna de Portfólio (Harry Markowitz, 1952) é que diversificar — combinar ativos que não se movem exatamente da mesma forma — reduz o risco total da carteira sem necessariamente reduzir o retorno esperado. Isso acontece porque, quando um ativo cai, outro pode subir ou ficar estável, suavizando as oscilações do conjunto. Cada ponto na nuvem da aba \"Efficient Frontier\" é uma carteira simulada com pesos diferentes entre os ativos; o objetivo é ficar perto da borda superior esquerda da nuvem — onde, para o risco assumido, o retorno esperado é o maior possível.",
     etf_titulo = "O que é um ETF?",
     etf_texto = "Um ETF (Exchange Traded Fund, ou Fundo de Índice) é negociado na bolsa como uma ação comum, mas seu objetivo é replicar o desempenho de um índice de referência, em vez de representar uma empresa só. Por isso, os ativos marcados como ETF na tabela abaixo estão ligados a um índice específico — o Ibovespa, o S&P 500, o preço do ouro, um índice global de ações etc.",
+    pressupostos_titulo = "Pressupostos do modelo (leia antes de tirar conclusões)",
+    pressupostos_itens = c(
+      "Rebalanceamento diário assumido: a simulação mantém os pesos fixos como se a carteira fosse rebalanceada todo dia útil — na prática isso geraria custos de corretagem e impostos não considerados aqui.",
+      "A fronteira é uma aproximação por simulação (Monte Carlo), não um otimizador exato — os pontos de mínima variância / máximo Sharpe / máximo retorno são os melhores encontrados entre as carteiras simuladas, não o ótimo matemático.",
+      "O CDI é usado como proxy da taxa livre de risco, obtido direto do Banco Central — não de um fundo específico, para não misturar taxa de administração ou erro de rastreamento na comparação.",
+      "O retorno anualizado do Simulador de Aportes é uma aproximação (não uma TIR/XIRR ponderada pelo momento de cada aporte) — serve como ordem de grandeza, não como retorno exato de fundo.",
+      "Todos os cálculos usam retornos logarítmicos, anualizados por 252 dias úteis.",
+      "Por padrão, os cálculos rodam sobre dados mensais, não diários — isso reduz ruído e atenua distorções na correlação entre ativos de mercados com calendários diferentes (ex.: B3 vs. NYSE).",
+      "O período padrão do simulador é de 5 anos — um ano de dados diários vira só ~12 observações mensais, pouco para uma matriz de covariância estável."
+    ),
     aportes_titulo_aba = "Simulador de Aportes",
     carteira_aportes_label = "Simular aportes em qual carteira?",
     aporte_inicial_label = "Aporte inicial (R$)",
@@ -67,14 +86,19 @@ DIC <- list(
     aviso_rebalanceamento = "Hipótese do modelo: a simulação assume que a carteira é rebalanceada diariamente para manter os pesos fixos no ponto escolhido (mínima variância / máximo Sharpe / máximo retorno). Na prática isso exigiria comprar e vender ativos todo dia útil, o que gera custos de corretagem e impostos não considerados aqui.",
     legenda_carteira = "Sua carteira", legenda_benchmark = "Benchmark (mesmos aportes)", legenda_cdi = "CDI (mesmos aportes)",
     col_serie = "Onde investiu", col_ganho_nominal = "Ganho (R$)", col_ganho_pct = "Ganho total (%)", col_ganho_anual = "Retorno anualizado (%)",
-    aviso_anualizacao = "O retorno anualizado aqui é uma aproximação simples (ganho total elevado a 252/nº de dias úteis do período) — não é uma taxa interna de retorno (XIRR) ponderada pelo momento exato de cada aporte. Serve como ordem de grandeza pra comparar as três opções, não como retorno exato de fundo."
+    aviso_anualizacao = "O retorno anualizado aqui é uma aproximação simples (ganho total elevado a 252/nº de dias úteis do período) — não é uma taxa interna de retorno (XIRR) ponderada pelo momento exato de cada aporte. Serve como ordem de grandeza pra comparar as três opções, não como retorno exato de fundo.",
+    observacao_alinhamento_titulo = "Sobre os dados e alinhamento",
+    observacao_alinhamento_texto = "Os ativos podem ter diferentes dias de negociação por diversos motivos: feriados locais (B3 vs. NYSE), suspensões de negociação, lançamentos recentes de ETF ou indisponibilidade de dados históricos. Por exemplo, um ETF como o IVVB11 (que replica o S&P 500) pode ter mais dias de negociação que uma ação brasileira, pois o mercado dos EUA tem menos feriados que o Brasil. Por outro lado, um ETF lançado recentemente pode ter menos dados históricos disponíveis. Para garantir que todos os cálculos (correlação, covariância, fronteira eficiente e beta) sejam feitos sobre o mesmo período, o pacote alinha automaticamente as séries, mantendo apenas as datas em que todos os ativos selecionados possuem dados disponíveis. Isso garante consistência e precisão nos resultados apresentados — ainda que possa reduzir o número total de observações disponíveis.",
+    rodape_autor = "João Paulo Barbosa",
+    rodape_versao = "Versão do pacote",
+    rodape_fonte = "Dados: Yahoo Finance via yfR"
   ),
   en = list(
+    titulo_dashboard = "brstocks - Markowitz Efficient Frontier Simulation",
     tickers_label = "Assets (comma-separated)",
     periodo_label = "Date range",
     benchmark_label = "Benchmark",
     n_port_label = "Number of simulated portfolios",
-    n_port_help = "Lower values keep the dashboard lighter. 3000 already gives a smooth frontier.",
     rf_label = "Risk-free rate",
     rf_manual_label = "Manual value (daily freq.)",
     anualizar_label = "Annualize return/risk (x252)",
@@ -93,6 +117,16 @@ DIC <- list(
     markowitz_texto = "The Markowitz Efficient Frontier shows, for each level of risk, the portfolio with the highest possible expected return combining the chosen assets. The core idea of Modern Portfolio Theory (Harry Markowitz, 1952) is that diversifying — combining assets that don't move in exactly the same way — reduces a portfolio's total risk without necessarily reducing its expected return. This happens because when one asset drops, another may rise or hold steady, smoothing out the swings of the combined portfolio. Every point in the cloud on the \"Efficient Frontier\" tab is a simulated portfolio with different weights across assets; the goal is to sit near the upper-left edge of the cloud, where expected return is the highest possible for the risk taken on.",
     etf_titulo = "What is an ETF?",
     etf_texto = "An ETF (Exchange Traded Fund) trades on the exchange like a regular stock, but its goal is to replicate the performance of a reference index rather than represent a single company. That's why the assets marked as ETFs in the table below are tied to a specific index — the Ibovespa, the S&P 500, the price of gold, a global equity index, and so on.",
+    pressupostos_titulo = "Model assumptions (read before drawing conclusions)",
+    pressupostos_itens = c(
+      "Daily rebalancing assumed: the simulation keeps weights fixed as if the portfolio were rebalanced every trading day -- in practice this would incur brokerage costs and taxes not modeled here.",
+      "The frontier is a Monte Carlo approximation, not an exact optimizer -- the minimum-variance / maximum-Sharpe / maximum-return points are the best found among the simulated portfolios, not the true mathematical optimum.",
+      "CDI is used as the risk-free proxy, fetched directly from the Central Bank -- not from a specific fund, to avoid mixing in management fees or tracking error.",
+      "The annualized return in the Contributions Simulator is an approximation (not a money-weighted IRR/XIRR) -- it's an order-of-magnitude comparison, not an exact fund-style return.",
+      "All calculations use log returns, annualized using 252 trading days.",
+      "By default, calculations run on monthly data, not daily -- this reduces noise and mitigates correlation distortions between assets on markets with different trading calendars (e.g. B3 vs. NYSE).",
+      "The simulator's default date range is 5 years -- a year of daily data only yields ~12 monthly observations, too few for a stable covariance matrix."
+    ),
     aportes_titulo_aba = "Contribution Simulator",
     carteira_aportes_label = "Simulate contributions into which portfolio?",
     aporte_inicial_label = "Initial contribution (R$)",
@@ -107,12 +141,20 @@ DIC <- list(
     aviso_rebalanceamento = "Model assumption: the simulation assumes the portfolio is rebalanced daily to keep fixed weights at the chosen point (min variance / max Sharpe / max return). In practice this would require buying and selling assets every trading day, incurring brokerage costs and taxes not modeled here.",
     legenda_carteira = "Your portfolio", legenda_benchmark = "Benchmark (same contributions)", legenda_cdi = "CDI (same contributions)",
     col_serie = "Invested in", col_ganho_nominal = "Gain (R$)", col_ganho_pct = "Total gain (%)", col_ganho_anual = "Annualized return (%)",
-    aviso_anualizacao = "The annualized return here is a simple approximation (total gain raised to 252/number of trading days in the period) -- it is not a money-weighted internal rate of return (XIRR) accounting for the exact timing of each contribution. Use it as an order-of-magnitude comparison across the three options, not as an exact fund return."
+    aviso_anualizacao = "The annualized return here is a simple approximation (total gain raised to 252/number of trading days in the period) -- it is not a money-weighted internal rate of return (XIRR) accounting for the exact timing of each contribution. Use it as an order-of-magnitude comparison across the three options, not as an exact fund return.",
+    observacao_alinhamento_titulo = "About the data and alignment",
+    observacao_alinhamento_texto = "Assets may have different trading days for several reasons: local holidays (B3 vs. NYSE), trading suspensions, recently launched ETFs, or unavailable historical data. For example, an ETF like IVVB11 (which tracks the S&P 500) may have more trading days than a Brazilian stock, as the US market has fewer holidays than Brazil. On the other hand, a recently launched ETF may have less historical data available. To ensure that all calculations (correlation, covariance, efficient frontier, and beta) are performed over the same period, the package automatically aligns the series, keeping only the dates where all selected assets have available data. This ensures consistency and accuracy in the results presented — even though it may reduce the total number of available observations.",
+    rodape_autor = "João Paulo Barbosa",
+    rodape_versao = "Package version",
+    rodape_fonte = "Data: Yahoo Finance via yfR"
   )
 )
 
+# ---------------------------------------------------------------------
 # Example asset table for the Learn tab. Tickers and descriptions were
 # verified against public B3/issuer sources as of the time of writing.
+# NCDI11 removed because it has no historical data available.
+# ---------------------------------------------------------------------
 TABELA_APRENDA <- dplyr::tribble(
   ~ticker,   ~pt,                                                 ~en,                                              ~categoria_pt,        ~categoria_en,
   "PETR4",   "Petrobras (ação preferencial)",                     "Petrobras (preferred shares)",                   "Petróleo e gás",      "Oil & gas",
@@ -125,8 +167,6 @@ TABELA_APRENDA <- dplyr::tribble(
   "IVVB11",  "ETF que replica o S&P 500, listado na B3",          "ETF tracking the S&P 500, listed on B3",         "Índice EUA",          "US index",
   "GOLD11",  "ETF que replica o preço do ouro (LBMA Gold Price)", "ETF tracking the gold price (LBMA Gold Price)",  "Proteção/commodity",  "Safe-haven/commodity",
   "WRLD11",  "ETF que replica um índice global de ações (FTSE Global All Cap, mercados desenvolvidos e emergentes)", "ETF tracking a global equity index (FTSE Global All Cap, developed and emerging markets)", "Índice Mundial", "World index",
-  "LFTS11",  "ETF que investe em Tesouro Selic (LFTs), rentabilidade próxima ao CDI",  "ETF investing in Tesouro Selic bonds (LFTs), return close to the CDI rate", "Renda fixa (~CDI)", "Fixed income (~CDI)",
-  "NCDI11",  "ETF da Nu Asset que busca seguir o CDI/Selic",                           "Nu Asset ETF tracking the CDI/Selic rate",                                  "Renda fixa (~CDI)", "Fixed income (~CDI)",
   "HASH11",  "ETF que replica uma cesta diversificada de criptoativos (Nasdaq Crypto Index)", "ETF tracking a diversified basket of crypto assets (Nasdaq Crypto Index)", "Criptoativos", "Crypto assets",
   "QBTC11",  "ETF com exposição 100% a Bitcoin",                                       "ETF with 100% Bitcoin exposure",                                            "Criptoativos", "Crypto assets",
   "KNRI11",  "Fundo Imobiliário (FII) — cotas de imóveis comerciais/logísticos, negociado como ação", "Real Estate Fund (FII) — shares of commercial/logistics properties, traded like a stock", "Fundos Imobiliários", "Real estate funds",
@@ -138,8 +178,8 @@ TABELA_APRENDA <- dplyr::tribble(
 # ---------------------------------------------------------------------
 ui <- page_sidebar(
   title = div(
-    style = "display:flex; justify-content:space-between; align-items:center; width:100%;",
-    span("brstocks"),
+    style = "display:flex; justify-content:space-between; align-items:center; width:100%; gap: 12px;",
+    span(textOutput("titulo_app", inline = TRUE), style = "font-weight:600;"),
     radioButtons("idioma", NULL, choices = c("Portugues" = "pt", "English" = "en"),
                  selected = "pt", inline = TRUE)
   ),
@@ -148,14 +188,13 @@ ui <- page_sidebar(
                    base_font = font_google("Inter")),
 
   sidebar = sidebar(
-    width = 320,
+    width = 320, class = "compact-sidebar",
     textInput("tickers", "Ativos (separados por vírgula)", value = "PETR4, VALE3, ITUB4, BBDC4"),
     uiOutput("aviso_muitos_ativos"),
-    dateRangeInput("datas", "Período", start = Sys.Date() - 365, end = Sys.Date()),
+    dateRangeInput("datas", "Período", start = Sys.Date() - 365 * 5, end = Sys.Date()),
     selectInput("benchmark_mercado", "Benchmark",
                 choices = c("Ibovespa" = "BR", "S&P 500" = "US"), selected = "BR"),
     numericInput("n_portfolios", "Nº de carteiras simuladas", value = 3000, min = 500, step = 500),
-    uiOutput("n_port_help_txt"),
     selectInput("tipo_rf", "Taxa livre de risco",
                 choices = c("CDI" = "cdi", "SELIC" = "selic", "Zero (manual)" = "zero")),
     conditionalPanel(
@@ -168,7 +207,27 @@ ui <- page_sidebar(
     uiOutput("hover_help_txt")
   ),
 
-  tags$style(HTML(".tab-content { margin-top: 20px; }")),
+  tags$style(HTML("
+    .tab-content { margin-top: 20px; }
+    .compact-sidebar .form-group { margin-bottom: 10px; }
+    .compact-sidebar .shiny-html-output:empty { display: none; margin: 0; padding: 0; }
+    .text-justify { text-align: justify; }
+    .app-footer {
+      margin-top: 40px;
+      padding: 14px 4px 6px;
+      border-top: 1px solid #E5E5E5;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 16px;
+      font-size: 0.78em;
+      color: #6C757D;
+    }
+    .app-footer .footer-spacer { flex-grow: 1; }
+    .footer-icon-link { color: #6C757D; display: inline-flex; align-items: center; }
+    .footer-icon-link:hover { color: #0B3D91; }
+    .footer-icon-link svg { width: 15px; height: 15px; fill: currentColor; }
+  ")),
 
   navset_tab(
     nav_panel(
@@ -215,9 +274,22 @@ ui <- page_sidebar(
       uiOutput("texto_markowitz"),
       hr(),
       uiOutput("cabecalho_aprenda"),
-      DTOutput("tabela_aprenda")
+      DTOutput("tabela_aprenda"),
+      hr(),
+      div(
+        class = "alert alert-secondary",
+        style = "font-size: 0.9em; margin-top: 20px;",
+        uiOutput("observacao_alinhamento")
+      ),
+      div(
+        class = "alert alert-secondary",
+        style = "font-size: 0.85em; margin-top: 12px;",
+        uiOutput("pressupostos_modelo")
+      )
     )
-  )
+  ),
+
+  uiOutput("rodape")
 )
 
 # ---------------------------------------------------------------------
@@ -252,9 +324,28 @@ server <- function(input, output, session) {
     updateActionButton(session, "simular_aportes", label = d$simular_aportes_label)
   }, ignoreInit = TRUE)
 
-  output$n_port_help_txt <- renderUI(helpText(dic()$n_port_help))
   output$hover_help_txt  <- renderUI(helpText(dic()$hover_help))
   output$titulo_key <- renderText(dic()$carteiras_chave)
+  output$titulo_app <- renderText(dic()$titulo_dashboard)
+
+  # ---- Footer: minimal, always visible at the end of the page content ----
+  output$rodape <- renderUI({
+    d <- dic()
+    versao_pkg <- tryCatch(as.character(utils::packageVersion("brstocks")),
+                           error = function(e) "dev")
+    tags$footer(
+      class = "app-footer",
+      span(d$rodape_autor),
+      tags$a(href = "https://www.linkedin.com/in/jpbarbosa-econ", target = "_blank",
+             rel = "noopener noreferrer", title = "LinkedIn", class = "footer-icon-link",
+             HTML(SVG_LINKEDIN)),
+      tags$a(href = GITHUB_URL, target = "_blank", rel = "noopener noreferrer",
+             title = "GitHub", class = "footer-icon-link", HTML(SVG_GITHUB)),
+      span(class = "footer-spacer"),
+      span(paste0(d$rodape_versao, ": ", versao_pkg)),
+      span(d$rodape_fonte)
+    )
+  })
 
   output$aviso_muitos_ativos <- renderUI({
     n_tickers <- length(trimws(strsplit(input$tickers, ",")[[1]]))
@@ -267,30 +358,45 @@ server <- function(input, output, session) {
     }
   })
 
-  dados <- eventReactive(input$simular, {
+  # ---- Portfolio data: assets, risk-free rate, efficient frontier, key
+  # portfolios. Depends only on tickers/dates/n_portfolios/risk-free/
+  # annualize -- deliberately NEVER on the benchmark selector, so switching
+  # benchmarks cannot change the frontier or the Sharpe ratio.
+  dados_portfolio <- eventReactive(input$simular, {
     tickers_vec <- trimws(strsplit(input$tickers, ",")[[1]])
     validate(need(length(tickers_vec) >= 2, "Informe pelo menos 2 ativos. / Enter at least 2 assets."))
 
     withProgress(message = "Simulando...", value = 0, {
-      incProgress(0.15); acoes <- get_stocks(tickers_vec, from = input$datas[1], to = input$datas[2])
-      incProgress(0.15); bench <- get_benchmark(market = input$benchmark_mercado, from = input$datas[1], to = input$datas[2])
+      incProgress(0.2); acoes <- get_stocks(tickers_vec, from = input$datas[1], to = input$datas[2])
       incProgress(0.2)
       rf <- if (input$tipo_rf == "zero") input$risk_free_manual else
         calc_avg_risk_free(rate = input$tipo_rf, from = input$datas[1], to = input$datas[2])
       incProgress(0.3)
       fronteira <- calc_efficient_frontier(acoes, n_portfolios = input$n_portfolios,
                                            risk_free = rf, annualize = input$anualizar)
-      incProgress(0.1); key <- calc_key_portfolios(fronteira)
-      incProgress(0.1); beta_tbl <- calc_beta(acoes, bench)
-      list(acoes = acoes, bench = bench, fronteira = fronteira, key = key, beta = beta_tbl)
+      incProgress(0.15); key <- calc_key_portfolios(fronteira)
+      incProgress(0.15)
+      list(acoes = acoes, fronteira = fronteira, key = key)
     })
   })
 
+  # ---- Benchmark data: downloaded independently of the portfolio/frontier.
+  # Reacts automatically to the benchmark selector (no button click needed)
+  # once a portfolio has been simulated. Feeds ONLY the beta table and the
+  # "Portfolio vs Benchmark" chart -- never the frontier or Sharpe ratio.
+  dados_benchmark <- reactive({
+    req(dados_portfolio())
+    bench <- get_benchmark(market = input$benchmark_mercado,
+                           from = input$datas[1], to = input$datas[2])
+    beta_tbl <- calc_beta(dados_portfolio()$acoes, bench)
+    list(bench = bench, beta = beta_tbl)
+  })
+
   output$plot_fronteira <- renderPlotly({
-    req(dados())
+    req(dados_portfolio())
     d <- dic()
-    fr  <- dados()$fronteira
-    key <- dados()$key |>
+    fr  <- dados_portfolio()$fronteira
+    key <- dados_portfolio()$key |>
       mutate(simbolo = c("Minima Variancia" = "triangle-up",
                          "Maximo Sharpe"    = "star",
                          "Maximo Retorno"   = "square")[tipo])
@@ -321,8 +427,8 @@ server <- function(input, output, session) {
   })
 
   output$tabela_key <- renderDT({
-    req(dados())
-    tabela <- dados()$key |>
+    req(dados_portfolio())
+    tabela <- dados_portfolio()$key |>
       rowwise() |>
       mutate(
         retorno = percent(retorno, accuracy = 0.01), risco = percent(risco, accuracy = 0.01),
@@ -345,9 +451,9 @@ server <- function(input, output, session) {
   # Correlation heatmap, rendered with plotly for visual consistency with
   # the remaining plots in this dashboard.
   output$plot_correlacao <- renderPlotly({
-    req(dados())
+    req(dados_portfolio())
     d <- dic()
-    cor_mat <- calc_correlation_matrix(dados()$acoes)
+    cor_mat <- suppressWarnings(calc_correlation_matrix(dados_portfolio()$acoes))
 
     plot_ly(
       x = colnames(cor_mat), y = rownames(cor_mat), z = cor_mat, type = "heatmap",
@@ -361,17 +467,17 @@ server <- function(input, output, session) {
   })
 
   output$tabela_beta <- renderDT({
-    req(dados())
-    datatable(dados()$beta, options = list(pageLength = 10, ordering = FALSE), rownames = FALSE,
+    req(dados_benchmark())
+    datatable(dados_benchmark()$beta, options = list(pageLength = 10, ordering = FALSE), rownames = FALSE,
               selection = "none")
   })
 
   output$plot_vs_benchmark <- renderPlotly({
-    req(dados())
+    req(dados_portfolio(), dados_benchmark())
     d <- dic()
-    pesos_sel <- dados()$key |> filter(tipo == input$carteira_escolhida) |> pull(pesos) |> (\(x) x[[1]])()
+    pesos_sel <- dados_portfolio()$key |> filter(tipo == input$carteira_escolhida) |> pull(pesos) |> (\(x) x[[1]])()
 
-    retornos_wide <- dados()$acoes |>
+    retornos_wide <- dados_portfolio()$acoes |>
       filter(ticker %in% names(pesos_sel), !is.na(ret_adjusted_prices)) |>
       select(ticker, ref_date, ret_adjusted_prices) |>
       pivot_wider(names_from = ticker, values_from = ret_adjusted_prices) |>
@@ -382,7 +488,7 @@ server <- function(input, output, session) {
 
     carteira_df <- dplyr::tibble(ref_date = retornos_wide$ref_date,
                                  valor = exp(cumsum(ret_carteira)), serie = "Carteira")
-    bench_df <- dados()$bench |> filter(ref_date >= min(carteira_df$ref_date)) |>
+    bench_df <- dados_benchmark()$bench |> filter(ref_date >= min(carteira_df$ref_date)) |>
       transmute(ref_date, valor = cumret_adjusted_prices, serie = "Benchmark")
 
     plot_ly(bind_rows(carteira_df, bench_df), x = ~ref_date, y = ~valor, color = ~serie,
@@ -425,10 +531,10 @@ server <- function(input, output, session) {
   }
 
   aportes_dados <- eventReactive(input$simular_aportes, {
-    req(dados())
-    pesos_sel <- dados()$key |> filter(tipo == input$carteira_aportes) |> pull(pesos) |> (\(x) x[[1]])()
+    req(dados_portfolio(), dados_benchmark())
+    pesos_sel <- dados_portfolio()$key |> filter(tipo == input$carteira_aportes) |> pull(pesos) |> (\(x) x[[1]])()
 
-    retornos_wide <- dados()$acoes |>
+    retornos_wide <- dados_portfolio()$acoes |>
       filter(ticker %in% names(pesos_sel), !is.na(ret_adjusted_prices)) |>
       select(ticker, ref_date, ret_adjusted_prices) |>
       pivot_wider(names_from = ticker, values_from = ret_adjusted_prices) |>
@@ -437,7 +543,7 @@ server <- function(input, output, session) {
     matriz <- as.matrix(retornos_wide[, names(pesos_sel)])
     ret_carteira <- as.numeric(matriz %*% pesos_sel[colnames(matriz)])
 
-    bench_ret <- dados()$bench |>
+    bench_ret <- dados_benchmark()$bench |>
       filter(!is.na(ret_adjusted_prices)) |>
       select(ref_date, ret_bench = ret_adjusted_prices)
 
@@ -465,7 +571,7 @@ server <- function(input, output, session) {
   moeda_br <- scales::label_currency(prefix = "R$ ", big.mark = ".", decimal.mark = ",", accuracy = 1)
 
   output$aviso_rebalanceamento <- renderUI({
-    div(class = "alert alert-warning", style = "font-size: 0.9em;", dic()$aviso_rebalanceamento)
+    div(class = "alert alert-warning text-justify", style = "font-size: 0.9em;", dic()$aviso_rebalanceamento)
   })
 
   output$plot_aportes <- renderPlotly({
@@ -489,7 +595,7 @@ server <- function(input, output, session) {
   output$resumo_aportes <- renderUI({
     req(aportes_dados())
     d <- dic()
-    tagList(DTOutput("tabela_comparacao_aportes"), div(class = "alert alert-secondary", style = "font-size: 0.85em; margin-top:10px;", d$aviso_anualizacao))
+    tagList(DTOutput("tabela_comparacao_aportes"), div(class = "alert alert-secondary text-justify", style = "font-size: 0.85em; margin-top:10px;", d$aviso_anualizacao))
   })
 
   output$tabela_comparacao_aportes <- renderDT({
@@ -523,8 +629,8 @@ server <- function(input, output, session) {
   output$texto_markowitz <- renderUI({
     d <- dic()
     tagList(
-      h4(d$markowitz_titulo), p(d$markowitz_texto),
-      h4(d$etf_titulo), p(d$etf_texto)
+      h4(d$markowitz_titulo), p(class = "text-justify", d$markowitz_texto),
+      h4(d$etf_titulo), p(class = "text-justify", d$etf_texto)
     )
   })
 
@@ -544,6 +650,28 @@ server <- function(input, output, session) {
     datatable(tabela, options = list(dom = "t", pageLength = 15, ordering = FALSE), rownames = FALSE,
               selection = "none",
               colnames = c(d$col_ticker, d$col_oque, d$col_categoria))
+  })
+
+  # ---- Observação sobre alinhamento de dados ----
+  output$observacao_alinhamento <- renderUI({
+    d <- dic()
+    tagList(
+      strong(d$observacao_alinhamento_titulo),
+      p(class = "text-justify", d$observacao_alinhamento_texto)
+    )
+  })
+
+  # ---- Model assumptions (condensed version of the README section) ----
+  output$pressupostos_modelo <- renderUI({
+    d <- dic()
+    tagList(
+      strong(d$pressupostos_titulo),
+      tags$ul(
+        class = "text-justify",
+        style = "padding-left: 20px; margin-top: 8px; margin-bottom: 0;",
+        lapply(d$pressupostos_itens, tags$li)
+      )
+    )
   })
 }
 

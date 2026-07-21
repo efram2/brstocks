@@ -1,10 +1,7 @@
 # brstocks 📈🇧🇷
 
-[![CRAN Status](https://www.r-pkg.org/badges/version/brstocks)](https://cran.r-project.org/package=brstocks)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![R-CMD-check](https://github.com/efram2/brstocks/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/efram2/brstocks/actions/workflows/R-CMD-check.yaml)
-[![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/brstocks)](https://cran.r-project.org/package=brstocks)
-[![Downloads](https://cranlogs.r-pkg.org/badges/brstocks)](https://cran.r-project.org/package=brstocks)
 [![GitHub stars](https://img.shields.io/github/stars/efram2/brstocks.svg)](https://github.com/efram2/brstocks/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/efram2/brstocks.svg)](https://github.com/efram2/brstocks/network)
 
@@ -15,6 +12,13 @@ portfolio simulation.
 
 If you are new to the Brazilian market, start with the primer below before
 jumping into the code.
+
+**Contents:** [Primer](#a-primer-on-the-brazilian-market-for-newcomers) ·
+[Why brstocks?](#why-brstocks) · [Installation](#installation) ·
+[Quick start](#-quick-start-how-the-functions-connect) ·
+[Function reference](#function-reference) ·
+[Dashboard](#the-interactive-dashboard) ·
+[Data source](#data-source) · [References](#references)
 
 ---
 
@@ -126,6 +130,13 @@ fronteira <- calc_efficient_frontier(
 plot_efficient_frontier(fronteira)
 ```
 
+> **Note on frequency:** `calc_expected_return()`, `calc_covariance_matrix()`,
+> and `calc_efficient_frontier()` all default to `freq_data = "monthly"`,
+> so the pattern above is safe out of the box. If you override `freq_data`
+> in one of the calls, override it consistently in all three — a mismatch
+> now raises a warning rather than silently producing a wrong annualized
+> return.
+
 Every `plot_*` and `calc_efficient_frontier()` function also accepts raw
 `stock_data` directly and will compute what it needs internally — so the
 package works fine for quick one-off exploration too. The point of the
@@ -147,13 +158,55 @@ All `get_*` functions support flexible date inputs: `"YYYY-MM-DD"`, `Date`, or `
 **Analytics (`calc_*`)**
 
 - `calc_beta()` → Beta coefficient relative to a benchmark
-- `calc_expected_return()` → Mean historical log return per ticker
+- `calc_expected_return()` → Mean historical log return per ticker; aggregates to monthly returns by default (`freq_data = "monthly"`)
 - `calc_variance()` → Return variance per ticker
-- `calc_covariance_matrix()` → Pairwise covariance matrix
-- `calc_correlation_matrix()` → Pairwise Pearson correlation matrix
+- `calc_covariance_matrix()` → Pairwise covariance matrix; aggregates to monthly returns by default (`freq_data = "monthly"`)
+- `calc_correlation_matrix()` → Pairwise Pearson correlation matrix; aggregates to monthly returns by default (`freq_data = "monthly"`)
 - `calc_avg_risk_free()` → Average daily CDI/SELIC rate over a period
-- `calc_efficient_frontier()` → Monte Carlo portfolio simulation (Markowitz, 1952); accepts precomputed `expected_returns`/`cov_matrix`
+- `calc_efficient_frontier()` → Monte Carlo portfolio simulation (Markowitz, 1952); accepts precomputed `expected_returns`/`cov_matrix`; aggregates to monthly returns by default (`freq_data = "monthly"`)
 - `calc_key_portfolios()` → Extracts the minimum-variance, maximum-Sharpe, and maximum-return portfolios from a simulated frontier
+
+All `calc_*` functions above that take multi-asset `stock_data` accept two
+cross-cutting arguments:
+
+- **`na_method`** — how mismatched trading calendars are aligned
+  (`calc_beta()`, `calc_expected_return()`, `calc_variance()`,
+  `calc_covariance_matrix()`, `calc_correlation_matrix()`,
+  `calc_efficient_frontier()`). See [Date alignment](#date-alignment-across-assets).
+- **`freq_data`** — the return frequency the calculation runs on
+  (`calc_expected_return()`, `calc_covariance_matrix()`,
+  `calc_correlation_matrix()`, `calc_efficient_frontier()`; `calc_beta()`
+  and `calc_variance()` are daily-only for now). See [Return frequency](#return-frequency).
+
+### Date alignment across assets
+
+Assets can have different trading days for several reasons: local holidays
+(B3 vs. NYSE), trading suspensions, recently launched ETFs, or missing
+historical data for a given ticker. To keep every calculation consistent,
+the functions listed above align the input series internally before
+computing anything, controlled by `na_method`:
+
+- `"intersection"` (default) — keeps only the dates where *all* selected
+  assets have data. Safest option; may reduce the number of observations.
+- `"pairwise"` — computes each pairwise statistic (e.g. each cell of a
+  correlation matrix) over the dates common to that specific pair of
+  assets, rather than the intersection across all assets at once.
+- `"locf"` — last observation carried forward, filling gaps instead of
+  dropping dates.
+
+When observations are dropped, a warning reports how many were removed.
+
+### Return frequency
+
+`calc_expected_return()`, `calc_covariance_matrix()`,
+`calc_correlation_matrix()`, and `calc_efficient_frontier()` share a
+`freq_data` argument (`"daily"` / `"weekly"` / `"monthly"`, default
+`"monthly"`) and attach it as an attribute to their output.
+
+If you compose them manually — e.g. pass a `calc_expected_return()` result
+into `calc_efficient_frontier()`'s `expected_returns` argument — keep
+`freq_data` consistent across the calls. A mismatch now raises a warning
+instead of silently producing a wrong annualized return.
 
 **Visualization (`plot_*`)**
 
@@ -210,6 +263,21 @@ or a production-grade backtest:
 5. **Log returns throughout**, annualized using 252 trading days per year
    (not 365 calendar days), consistent with standard quantitative-finance
    convention.
+6. **Portfolio construction runs on monthly-aggregated returns by default.**
+   `calc_expected_return()`, `calc_covariance_matrix()`,
+   `calc_correlation_matrix()`, and `calc_efficient_frontier()` all default
+   to `freq_data = "monthly"`, aggregating daily log returns into monthly
+   ones (log returns are additive, so this is a simple sum) before
+   computing anything. This reduces noise and produces more stable
+   estimates than raw daily data, and mitigates the "Epps effect" — daily
+   correlation between assets on different exchanges (e.g. B3 vs. NYSE)
+   tends to be understated, because information doesn't reach both markets
+   instantly. `calc_beta()` and `calc_variance()` still operate on daily
+   data only, for now.
+7. **The dashboard defaults to a 5-year lookback**, not 1 year — a year of
+   daily data only yields ~12 monthly observations once aggregated, too few
+   for a stable covariance matrix. Widen the date range further as you add
+   more assets.
 
 ## Data Source
 
@@ -218,9 +286,13 @@ via the [yfR](https://github.com/ropensci/yfR) package (Perlin, 2022).
 Risk-free rate data (CDI/SELIC) is retrieved from the
 [Central Bank of Brazil's SGS API](https://www3.bcb.gov.br/sgspub/).
 
-> **Note:** Yahoo Finance data is suitable for academic research and personal analysis.
-> For production use in research papers or dissertations, consider professional
-> data sources such as Economática or EODHD.
+> **Note:** yfR's own documentation flags this explicitly — Yahoo Finance
+> data for individual stocks can be inconsistent around corporate events
+> (splits, dividends), and its author advises against relying on it for
+> production research such as papers or dissertations, pointing instead to
+> professional sources like Economática, EODHD, or SimFin. It's fine for
+> the academic/exploratory use case this package targets.
+> — [yfR README, "Warnings"](https://github.com/ropensci/yfR#warnings)
 
 ## References
 

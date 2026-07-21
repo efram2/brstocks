@@ -34,7 +34,11 @@ calc_key_portfolios <- function(fronteira) {
   idx_max_sharpe <- which.max(fronteira$sharpe)
   idx_max_ret    <- which.max(fronteira$retorno)
 
-  fronteira[c(idx_min_var, idx_max_sharpe, idx_max_ret), ] |>
-    dplyr::mutate(tipo = c("Minima Variancia", "Maximo Sharpe", "Maximo Retorno")) |>
-    dplyr::relocate(tipo)
+  resultado <- fronteira[c(idx_min_var, idx_max_sharpe, idx_max_ret), ]
+  resultado$tipo <- c("Minima Variancia", "Maximo Sharpe", "Maximo Retorno")
+
+  # Reordenar colunas sem usar relocate
+  resultado <- resultado[, c("tipo", setdiff(names(resultado), "tipo"))]
+
+  return(resultado)
 }

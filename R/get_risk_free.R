@@ -1,16 +1,23 @@
 #' Get the Brazilian risk-free interest rate series (CDI or SELIC)
 #'
-#' Retrieves the daily CDI or SELIC rate series from the Brazilian Central
-#' Bank's open data API (SGS -- Sistema Gerenciador de Séries Temporais).
-#' Useful as the \code{risk_free} input for \code{\link{calc_efficient_frontier}}.
+#' Thin wrapper around \pkg{brfinance}'s \code{get_cdi_rate()} and
+#' \code{get_selic_rate()}, which fetch these series from the Brazilian
+#' Central Bank's open data API (SGS -- Sistema Gerenciador de Séries
+#' Temporais). Useful as the \code{risk_free} input for
+#' \code{\link{calc_efficient_frontier}}.
 #'
-#' @param rate Character. \code{"cdi"} (default, SGS series 12) or
-#'   \code{"selic"} (SGS series 11).
+#' @param rate Character. \code{"cdi"} (default) or \code{"selic"}.
 #' @param from Start date. Defaults to 365 days before today.
 #' @param to End date. Defaults to today.
 #'
 #' @return A tibble with columns \code{ref_date} and \code{taxa} (daily rate,
 #'   as a decimal -- e.g. \code{0.0004} means 0.04% a.d.).
+#'
+#' @details
+#' brstocks used to hit the BCB/SGS API directly for this. It now delegates
+#' to \pkg{brfinance} instead, which already wraps that API (with its own
+#' internal series-fetching helper) and is a dependency shared with
+#' brstocks' sibling package.
 #'
 #' @examples
 #' \dontrun{
@@ -21,28 +28,24 @@
 #' @export
 get_risk_free <- function(rate = "cdi", from = NULL, to = NULL) {
 
-  serie <- switch(rate,
-    "cdi"   = 12,
-    "selic" = 11,
-    stop("Unsupported rate. Use 'cdi' or 'selic'.")
-  )
+  rate <- match.arg(rate, c("cdi", "selic"))
 
   if (is.null(from)) from <- Sys.Date() - 365
   if (is.null(to))   to   <- Sys.Date()
 
-  url <- sprintf(
-    "https://api.bcb.gov.br/dados/serie/bcdata.sgs.%d/dados?formato=json&dataInicial=%s&dataFinal=%s",
-    serie,
-    format(as.Date(from), "%d/%m/%Y"),
-    format(as.Date(to),   "%d/%m/%Y")
+  from_chr <- as.character(as.Date(from))
+  to_chr   <- as.character(as.Date(to))
+
+  brutos <- switch(rate,
+                   "cdi"   = brfinance::get_cdi_rate(start_date = from_chr, end_date = to_chr,
+                                                     language = "eng", labels = FALSE),
+                   "selic" = brfinance:::.get_sgs_series(11, start_date = from_chr, end_date = to_chr)
   )
 
-  resp   <- httr2::request(url) |> httr2::req_perform()
-  brutos <- httr2::resp_body_json(resp, simplifyVector = TRUE)
-
-  dplyr::tibble(
-    ref_date = as.Date(brutos$data, format = "%d/%m/%Y"),
-    taxa     = as.numeric(brutos$valor) / 100  # BCB retorna em % ao dia
+  dplyr::transmute(
+    brutos,
+    ref_date = as.Date(date),
+    taxa     = value / 100  # brfinance retorna em % ao dia, igual à API crua da SGS
   )
 }
 

@@ -9,9 +9,23 @@
 #'
 #' @param stock_data A tibble returned by \code{\link{get_stocks}}, containing
 #'   one or more tickers.
+#' @param na_method Character. How to handle missing observations.
+#'   One of "intersection" (default), "pairwise", or "locf".
+#'   See \code{.prepare_returns_matrix} for details.
+#' @param freq_data Character. Frequency at which returns are aggregated
+#'   before computing covariance. One of "daily", "weekly", or
+#'   \code{"monthly"} (default). Matches the default of
+#'   \code{\link{calc_efficient_frontier}} so that composing these functions
+#'   manually (see examples) produces consistent results out of the box.
 #'
 #' @return A named numeric matrix of dimensions \eqn{n \times n}, where
 #'   \eqn{n} is the number of unique tickers.
+#'
+#' @details
+#' If you pass the result into \code{\link{calc_efficient_frontier}} via its
+#' \code{cov_matrix} argument, make sure to use the same \code{freq_data} in
+#' both calls -- otherwise annualization will be inconsistent (a warning is
+#' raised in that case).
 #'
 #' @examples
 #' \dontrun{
@@ -20,16 +34,20 @@
 #' }
 #'
 #' @export
-calc_covariance_matrix <- function(stock_data) {
+calc_covariance_matrix <- function(stock_data,
+                                   na_method = "intersection",
+                                   freq_data = "monthly") {
 
-  retornos <- stock_data %>%
-    dplyr::filter(!is.na(ret_adjusted_prices)) %>%
-    dplyr::select(ticker, ref_date, ret_adjusted_prices) %>%
-    tidyr::pivot_wider(
-      names_from  = ticker,
-      values_from = ret_adjusted_prices
-    ) %>%
-    dplyr::select(-ref_date)
+  freq_data <- match.arg(freq_data, c("daily", "weekly", "monthly"))
 
-  cov(retornos)
+  ret_matrix <- .prepare_returns_matrix(stock_data, na_method = na_method)
+
+  if (freq_data != "daily") {
+    ret_matrix <- .aggregate_returns(ret_matrix, freq = freq_data,
+                                     dates = attr(ret_matrix, "dates"))
+  }
+
+  resultado <- stats::cov(ret_matrix)
+  attr(resultado, "freq_data") <- freq_data
+  resultado
 }

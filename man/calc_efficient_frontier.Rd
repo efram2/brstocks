@@ -8,39 +8,35 @@ calc_efficient_frontier(
   stock_data = NULL,
   n_portfolios = 10000,
   risk_free = 0,
-  annualize = FALSE,
-  periods_per_year = 252,
+  freq_data = "monthly",
+  annualize = TRUE,
+  periods_per_year = NULL,
+  na_method = "intersection",
   expected_returns = NULL,
   cov_matrix = NULL
 )
 }
 \arguments{
-\item{stock_data}{A tibble returned by \code{\link{get_stocks}}, containing
-two or more tickers. Can be omitted if both \code{expected_returns} and
-\code{cov_matrix} are supplied directly.}
+\item{stock_data}{A tibble returned by \code{\link{get_stocks}}.}
 
-\item{n_portfolios}{Integer. Number of random portfolios to simulate.
-Default is \code{10000}. Higher values produce smoother frontiers.}
+\item{n_portfolios}{Integer. Number of random portfolios to simulate.}
 
-\item{risk_free}{Numeric. Risk-free rate used in the Sharpe ratio, at the
-same frequency as \code{stock_data}'s returns (daily by default).
-Default is \code{0}.}
+\item{risk_free}{Numeric. Risk-free rate at the same frequency as returns.}
 
-\item{annualize}{Logical. If \code{TRUE}, annualizes \code{retorno} and
-\code{risco} assuming \code{periods_per_year} trading periods.
-Default is \code{FALSE}.}
+\item{freq_data}{Character. Frequency for portfolio analysis.
+Default is \code{"monthly"} as recommended for robust covariance
+estimation and efficient frontier construction (less noise than
+daily data, more observations than yearly).}
 
-\item{periods_per_year}{Integer. Used only when \code{annualize = TRUE}.
-Default is \code{252} (daily data).}
+\item{annualize}{Logical. If \code{TRUE}, annualizes return and risk.}
 
-\item{expected_returns}{Optional. A tibble previously computed with
-\code{\link{calc_expected_return}}. Supplying this avoids recomputing it
-from \code{stock_data}, and lets you reuse the same variable across
-multiple calls (e.g. while trying different \code{risk_free} values).}
+\item{periods_per_year}{Integer. Default 252 for daily, 12 for monthly.}
 
-\item{cov_matrix}{Optional. A matrix previously computed with
-\code{\link{calc_covariance_matrix}}. Same rationale as
-\code{expected_returns}.}
+\item{na_method}{Character. Passed to \code{.prepare_returns_matrix()}.}
+
+\item{expected_returns}{Optional. Pre-computed expected returns.}
+
+\item{cov_matrix}{Optional. Pre-computed covariance matrix.}
 }
 \value{
 A tibble with \code{n_portfolios} rows and the following columns:
@@ -52,11 +48,7 @@ A tibble with \code{n_portfolios} rows and the following columns:
 }
 }
 \description{
-Uses Monte Carlo simulation to generate a large number of random portfolios
-and compute their expected return, risk, Sharpe ratio, and asset weights.
-The resulting dataset can be plotted with \code{\link{plot_efficient_frontier}}
-to visualize the efficient frontier, or used to recover the weights of any
-simulated portfolio (e.g. the one with the highest Sharpe ratio).
+Simulate portfolios to build the efficient frontier
 }
 \details{
 Portfolio weights are drawn from a uniform distribution and normalized to

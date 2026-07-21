@@ -13,6 +13,9 @@
 #'
 #' @param stock_data A tibble returned by \code{\link{get_stocks}}.
 #' @param benchmark_data A tibble returned by \code{\link{get_benchmark}}.
+#' @param na_method Character. How to handle missing observations.
+#'   One of "intersection" (default), "pairwise", or "locf".
+#'   See \code{.prepare_returns_matrix} for details.
 #'
 #' @return A tibble with columns:
 #' \describe{
@@ -28,17 +31,41 @@
 #' }
 #'
 #' @export
-calc_beta <- function(stock_data, benchmark_data) {
+calc_beta <- function(stock_data, benchmark_data, na_method = "intersection") {
 
+  # Prepara a matriz de retornos dos ativos
+  ret_matrix <- .prepare_returns_matrix(stock_data, na_method = na_method)
+  tickers <- colnames(ret_matrix)
+
+  # Prepara a matriz de retornos do benchmark
   benchmark_clean <- benchmark_data %>%
     dplyr::filter(!is.na(ret_adjusted_prices)) %>%
     dplyr::select(ref_date, ret_benchmark = ret_adjusted_prices)
 
-  stock_data %>%
-    dplyr::filter(!is.na(ret_adjusted_prices)) %>%
-    dplyr::inner_join(benchmark_clean, by = "ref_date") %>%
-    dplyr::group_by(ticker) %>%
-    dplyr::summarise(
-      beta = cov(ret_adjusted_prices, ret_benchmark) / var(ret_benchmark)
+  # Pega as datas dos ativos
+  datas_ativos <- attr(ret_matrix, "dates")
+
+  # Cria data frame com os retornos dos ativos e do benchmark alinhados
+  result <- data.frame(ticker = character(), beta = numeric())
+
+  for (ticker in tickers) {
+    # Cria data frame com os dados do ativo
+    ret_asset <- data.frame(
+      ref_date = datas_ativos,
+      ret_asset = ret_matrix[, ticker]
     )
+
+    # Junta com o benchmark
+    dados_combinados <- ret_asset %>%
+      dplyr::inner_join(benchmark_clean, by = "ref_date")
+
+    # Calcula beta
+    beta_val <- stats::cov(dados_combinados$ret_asset,
+                           dados_combinados$ret_benchmark) /
+      stats::var(dados_combinados$ret_benchmark)
+
+    result <- rbind(result, data.frame(ticker = ticker, beta = beta_val))
+  }
+
+  return(result)
 }
