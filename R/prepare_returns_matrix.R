@@ -44,7 +44,7 @@
     ) |>
     dplyr::arrange(ref_date)
 
-  # 🔥 GUARDA AS DATAS
+  # GUARDA AS DATAS
   datas <- retornos$ref_date
 
   retornos <- retornos |>
@@ -76,7 +76,7 @@
     stop("Unknown 'na_method'. Use 'intersection', 'pairwise' or 'locf'.", call. = FALSE)
   }
 
-  # 🔥 RETORNA COM ATRIBUTO DE DATAS
+  # RETORNA COM ATRIBUTO DE DATAS
   resultado <- as.matrix(retornos)
   attr(resultado, "dates") <- datas
 

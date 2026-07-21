@@ -16,13 +16,13 @@ RoxygenNote: 7.3.3
 Imports:
     dplyr,
     ggplot2,
-    httr2,
     magrittr,
     stats,
     tibble,
     tidyr,
     yfR,
-    zoo
+    zoo,
+    brfinance
 Suggests:
     shiny,
     bslib,
