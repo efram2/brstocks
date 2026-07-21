@@ -4,50 +4,96 @@
 \alias{get_stocks}
 \title{Get historical stock data from Yahoo Finance}
 \usage{
-get_stocks(tickers, from = NULL, to = NULL, freq = "daily", add_sa = TRUE)
+get_stocks(tickers, from = NULL, to = NULL, freq = "daily")
 }
 \arguments{
-\item{tickers}{Character vector of stock tickers (e.g. \code{"PETR4"} or
-\code{c("PETR4", "VALE3")}).}
+\item{tickers}{Character vector of ticker symbols (e.g.
+\code{"PETR4"}, \code{"VALE3"}, \code{"BOVA11"},
+\code{"GOLD11"}, \code{"IVVB11"}).}
 
-\item{from}{Start date. Accepts \code{Date} or character in \code{"YYYY-MM-DD"}
-format. Defaults to 365 days before today.}
+\item{from}{Start date. Accepts \code{NULL}, \code{"YYYY"},
+\code{"YYYY-MM"} or \code{"YYYY-MM-DD"}.
 
-\item{to}{End date. Accepts \code{Date} or character in \code{"YYYY-MM-DD"}
-format. Defaults to today.}
+If \code{NULL} (default), the download starts 365 days before the
+current date.}
 
-\item{freq}{Data frequency. One of \code{"daily"} (default), \code{"weekly"},
-\code{"monthly"}, or \code{"yearly"}.}
+\item{to}{End date. Accepts \code{NULL}, \code{"YYYY"},
+\code{"YYYY-MM"} or \code{"YYYY-MM-DD"}.
 
-\item{add_sa}{Logical. If \code{TRUE} (default), automatically appends the
-\code{".SA"} suffix required for B3-listed tickers. Tickers that already
-end in \code{".SA"} or start with \code{"^"} (indices) are left unchanged.}
+If \code{NULL} (default), the current date is used.}
+
+\item{freq}{Data frequency. One of
+\code{"daily"} (default),
+\code{"weekly"},
+\code{"monthly"},
+or \code{"yearly"}.}
 }
 \value{
-A tibble with the following columns:
+A tibble with one row per asset and trading date containing:
+
 \describe{
-\item{ticker}{Ticker identifier}
-\item{ref_date}{Reference date}
-\item{price_open}{Opening price}
-\item{price_high}{Highest price of the period}
-\item{price_low}{Lowest price of the period}
-\item{price_close}{Closing price}
-\item{volume}{Trading volume}
-\item{price_adjusted}{Adjusted price (splits and dividends)}
-\item{ret_adjusted_prices}{Log return of adjusted prices}
-\item{ret_closing_prices}{Log return of closing prices}
-\item{cumret_adjusted_prices}{Cumulative return (base = 1)}
+\item{ticker}{Ticker identifier.}
+\item{ref_date}{Trading date.}
+\item{price_open}{Opening price.}
+\item{price_high}{Highest price during the period.}
+\item{price_low}{Lowest price during the period.}
+\item{price_close}{Closing price.}
+\item{volume}{Trading volume.}
+\item{price_adjusted}{Adjusted closing price.}
+\item{ret_adjusted_prices}{Log return based on adjusted prices.}
+\item{ret_closing_prices}{Log return based on closing prices.}
+\item{cumret_adjusted_prices}{Cumulative return (base = 1).}
 }
 }
 \description{
-Retrieves historical OHLCV price data and log returns for one or more
-stocks using Yahoo Finance as the data source, via the yfR package.
+Downloads historical OHLCV price data and log returns for one or more
+financial assets using Yahoo Finance as the data source via the
+\pkg{yfR} package.
+}
+\details{
+The function automatically attempts to resolve ticker symbols. It first
+searches for the ticker exactly as provided (e.g. \code{"GOLD11"}). If no
+data are found, it retries using the \code{".SA"} suffix
+(e.g. \code{"PETR4"} \eqn{\rightarrow} \code{"PETR4.SA"}). If neither
+version is available, a warning is issued and the ticker is skipped.
+
+Date inputs are flexible and may be supplied as complete dates
+(\code{"YYYY-MM-DD"}), year-month (\code{"YYYY-MM"}) or year only
+(\code{"YYYY"}). Missing dates are automatically replaced by sensible
+defaults.
+
+Yahoo Finance coverage varies across securities and markets.
+Some assets may have shorter trading histories or different trading
+calendars due to local holidays. When a ticker cannot be retrieved,
+the function issues a warning but continues downloading the remaining
+requested assets.
 }
 \examples{
 \dontrun{
+
+# Brazilian stocks
+get_stocks(c("PETR4", "VALE3"))
+
+# ETFs traded on B3
+get_stocks(c("BOVA11", "IVVB11", "GOLD11"))
+
+# Custom date range
+get_stocks(
+  c("PETR4", "BOVA11"),
+  from = "2020",
+  to = "2024"
+)
+
+# Monthly data
+get_stocks(
+  "IVVB11",
+  from = "2021-01",
+  freq = "monthly"
+)
+
+# Default behaviour (last 365 days)
 get_stocks("PETR4")
-get_stocks(c("PETR4", "VALE3"), from = "2020-01-01", to = "2024-01-01")
-get_stocks("PETR4", freq = "monthly")
+
 }
 
 }

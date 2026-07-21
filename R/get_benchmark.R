@@ -2,7 +2,7 @@
 #'
 #' Retrieves historical data for a market benchmark index. Supports the
 #' Brazilian market (Ibovespa) and the US market (S&P 500). Internally
-#' calls \code{\link{get_stocks}} with \code{add_sa = FALSE}.
+#' calls \code{\link{get_stocks}}.
 #'
 #' @param market Character. Market to retrieve the benchmark for.
 #'   Use \code{"BR"} (default) for Ibovespa (\code{^BVSP}) or
@@ -30,14 +30,13 @@ get_benchmark <- function(market = "BR",
                           freq   = "daily") {
 
   ticker <- switch(market,
-    "BR" = "^BVSP",
-    "US" = "^GSPC",
-    stop("Unsupported market. Use 'BR' or 'US'.")
+                   "BR" = "^BVSP",
+                   "US" = "^GSPC",
+                   stop("Unsupported market. Use 'BR' or 'US'.")
   )
 
   get_stocks(ticker,
              from   = from,
              to     = to,
-             freq   = freq,
-             add_sa = FALSE)
+             freq   = freq)
 }

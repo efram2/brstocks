@@ -26,7 +26,7 @@ A tibble with the same structure as \code{\link{get_stocks}}.
 \description{
 Retrieves historical data for a market benchmark index. Supports the
 Brazilian market (Ibovespa) and the US market (S&P 500). Internally
-calls \code{\link{get_stocks}} with \code{add_sa = FALSE}.
+calls \code{\link{get_stocks}}.
 }
 \examples{
 \dontrun{

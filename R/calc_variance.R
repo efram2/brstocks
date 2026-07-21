@@ -4,6 +4,9 @@
 #' Variance is the primary measure of individual asset risk in portfolio theory.
 #'
 #' @param stock_data A tibble returned by \code{\link{get_stocks}}.
+#' @param na_method Character. How to handle missing observations.
+#'   One of "intersection" (default), "pairwise", or "locf".
+#'   See \code{.prepare_returns_matrix} for details.
 #'
 #' @return A tibble with columns:
 #' \describe{
@@ -23,12 +26,11 @@
 #' }
 #'
 #' @export
-calc_variance <- function(stock_data) {
+calc_variance <- function(stock_data, na_method = "intersection") {
+  ret_matrix <- .prepare_returns_matrix(stock_data, na_method = na_method)
 
-  stock_data %>%
-    dplyr::filter(!is.na(ret_adjusted_prices)) %>%
-    dplyr::group_by(ticker) %>%
-    dplyr::summarise(
-      variance = var(ret_adjusted_prices)
-    )
+  data.frame(
+    ticker = colnames(ret_matrix),
+    variance = apply(ret_matrix, 2, stats::var, na.rm = TRUE)
+  )
 }

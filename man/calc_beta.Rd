@@ -4,12 +4,16 @@
 \alias{calc_beta}
 \title{Calculate the beta of one or more stocks}
 \usage{
-calc_beta(stock_data, benchmark_data)
+calc_beta(stock_data, benchmark_data, na_method = "intersection")
 }
 \arguments{
 \item{stock_data}{A tibble returned by \code{\link{get_stocks}}.}
 
 \item{benchmark_data}{A tibble returned by \code{\link{get_benchmark}}.}
+
+\item{na_method}{Character. How to handle missing observations.
+One of "intersection" (default), "pairwise", or "locf".
+See \code{.prepare_returns_matrix} for details.}
 }
 \value{
 A tibble with columns:

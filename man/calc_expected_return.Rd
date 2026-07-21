@@ -4,10 +4,14 @@
 \alias{calc_expected_return}
 \title{Calculate the expected return of one or more stocks}
 \usage{
-calc_expected_return(stock_data)
+calc_expected_return(stock_data, na_method = "intersection")
 }
 \arguments{
 \item{stock_data}{A tibble returned by \code{\link{get_stocks}}.}
+
+\item{na_method}{Character. How to handle missing observations.
+One of "intersection" (default), "pairwise", or "locf".
+See \code{.prepare_returns_matrix} for details.}
 }
 \value{
 A tibble with columns:

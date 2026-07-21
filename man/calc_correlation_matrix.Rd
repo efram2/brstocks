@@ -4,11 +4,15 @@
 \alias{calc_correlation_matrix}
 \title{Calculate the correlation matrix of a set of stocks}
 \usage{
-calc_correlation_matrix(stock_data)
+calc_correlation_matrix(stock_data, na_method = "intersection")
 }
 \arguments{
 \item{stock_data}{A tibble returned by \code{\link{get_stocks}}, containing
 one or more tickers.}
+
+\item{na_method}{Character. How to handle missing observations.
+One of "intersection" (default), "pairwise", or "locf".
+See \code{.prepare_returns_matrix} for details.}
 }
 \value{
 A named numeric matrix of dimensions \eqn{n \times n}, where
