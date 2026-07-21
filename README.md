@@ -126,12 +126,12 @@ fronteira <- calc_efficient_frontier(
 plot_efficient_frontier(fronteira)
 ```
 
-> **Note on frequency:** `calc_efficient_frontier()` aggregates to monthly
-> returns by default (`freq_data = "monthly"`). If you precompute
-> `expected_returns` / `cov_matrix` yourself, as above, make sure they're
-> built on the frequency you actually want the frontier to use — or skip
-> precomputing them and let `calc_efficient_frontier()` derive everything
-> internally from raw `stock_data`.
+> **Note on frequency:** `calc_expected_return()`, `calc_covariance_matrix()`,
+> and `calc_efficient_frontier()` all default to `freq_data = "monthly"`,
+> so the pattern above is safe out of the box. If you override `freq_data`
+> in one of the calls, override it consistently in all three — a mismatch
+> now raises a warning rather than silently producing a wrong annualized
+> return.
 
 Every `plot_*` and `calc_efficient_frontier()` function also accepts raw
 `stock_data` directly and will compute what it needs internally — so the
@@ -253,13 +253,20 @@ or a production-grade backtest:
 5. **Log returns throughout**, annualized using 252 trading days per year
    (not 365 calendar days), consistent with standard quantitative-finance
    convention.
-6. **Efficient frontier computed on monthly-aggregated returns by default.**
-   `calc_efficient_frontier()` uses `freq_data = "monthly"`, aggregating
-   daily log returns into monthly ones (log returns are additive, so this
-   is a simple sum) before simulating portfolios. This reduces noise and
-   produces more stable correlation/covariance estimates than raw daily
-   data. Other functions (`calc_beta()`, `calc_expected_return()`, etc.)
-   still operate on daily data by default.
+6. **Portfolio construction runs on monthly-aggregated returns by default.**
+   `calc_expected_return()`, `calc_covariance_matrix()`,
+   `calc_correlation_matrix()`, and `calc_efficient_frontier()` all default
+   to `freq_data = "monthly"`, aggregating daily log returns into monthly
+   ones (log returns are additive, so this is a simple sum) before
+   computing anything. This reduces noise and produces more stable
+   estimates than raw daily data — and mitigates the "Epps effect" (daily
+   correlation between assets on different exchanges, e.g. B3 vs. NYSE,
+   tends to be understated because information doesn't reach both markets
+   instantly). Because a year of daily data only yields ~12 monthly
+   observations, `run_dashboard()` defaults to a 5-year lookback (~60
+   monthly observations) rather than 1 year — widen it further for more
+   stable covariance estimates as you add more assets. `calc_beta()` and
+   `calc_variance()` still operate on daily data only, for now.
 
 ## Data Source
 
