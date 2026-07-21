@@ -22,7 +22,8 @@ Imports:
     tidyr,
     yfR,
     zoo,
-    brfinance
+    brfinance,
+    httr2
 Suggests:
     shiny,
     bslib,

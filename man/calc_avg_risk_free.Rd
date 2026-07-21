@@ -7,8 +7,7 @@
 calc_avg_risk_free(rate = "cdi", from = NULL, to = NULL)
 }
 \arguments{
-\item{rate}{Character. \code{"cdi"} (default, SGS series 12) or
-\code{"selic"} (SGS series 11).}
+\item{rate}{Character. \code{"cdi"} (default) or \code{"selic"}.}
 
 \item{from}{Start date. Defaults to 365 days before today.}
 

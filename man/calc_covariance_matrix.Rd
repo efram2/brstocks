@@ -4,7 +4,11 @@
 \alias{calc_covariance_matrix}
 \title{Calculate the covariance matrix of a set of stocks}
 \usage{
-calc_covariance_matrix(stock_data, na_method = "intersection")
+calc_covariance_matrix(
+  stock_data,
+  na_method = "intersection",
+  freq_data = "monthly"
+)
 }
 \arguments{
 \item{stock_data}{A tibble returned by \code{\link{get_stocks}}, containing
@@ -13,6 +17,12 @@ one or more tickers.}
 \item{na_method}{Character. How to handle missing observations.
 One of "intersection" (default), "pairwise", or "locf".
 See \code{.prepare_returns_matrix} for details.}
+
+\item{freq_data}{Character. Frequency at which returns are aggregated
+before computing covariance. One of "daily", "weekly", or
+\code{"monthly"} (default). Matches the default of
+\code{\link{calc_efficient_frontier}} so that composing these functions
+manually (see examples) produces consistent results out of the box.}
 }
 \value{
 A named numeric matrix of dimensions \eqn{n \times n}, where
@@ -26,6 +36,11 @@ while off-diagonal elements represent pairwise covariances.
 \details{
 The covariance matrix is a required input for portfolio optimization
 under Modern Portfolio Theory (Markowitz, 1952).
+
+If you pass the result into \code{\link{calc_efficient_frontier}} via its
+\code{cov_matrix} argument, make sure to use the same \code{freq_data} in
+both calls -- otherwise annualization will be inconsistent (a warning is
+raised in that case).
 }
 \examples{
 \dontrun{
