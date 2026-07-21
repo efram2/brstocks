@@ -5,6 +5,6 @@ account: joaobarbosa
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 17625848
-bundleId: 12295816
+bundleId: 12297975
 url: https://joaobarbosa.shinyapps.io/brstocks/
 version: 1
