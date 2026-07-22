@@ -3,8 +3,6 @@
 # ============================================================
 
 # Carregar pacotes necessários
-devtools::load_all()
-library(brfinance)
 library(brstocks)
 library(shiny)
 library(bslib)
