@@ -4,6 +4,7 @@
 
 # Carregar pacotes necessários
 library(brstocks)
+library(brfinance)
 library(shiny)
 library(bslib)
 library(dplyr)
