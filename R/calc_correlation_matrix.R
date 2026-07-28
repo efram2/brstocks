@@ -29,6 +29,12 @@
 #' does not reach the other instantaneously (the "Epps effect"). Aggregating
 #' to a lower frequency, as done by default here, mitigates this.
 #'
+#' When \code{na_method = "pairwise"}, each cell of the matrix is computed
+#' from the dates common to that specific pair of assets. Be aware this does
+#' not guarantee the resulting matrix is positive semi-definite -- inspect it
+#' (e.g. \code{eigen(result)$values}) before relying on it downstream, or
+#' prefer \code{"intersection"} if in doubt.
+#'
 #' @examples
 #' \dontrun{
 #' acoes <- get_stocks(c("PETR4", "VALE3", "ITUB4"))
@@ -36,20 +42,23 @@
 #' }
 #'
 #' @export
-calc_correlation_matrix <- function(stock_data,
-                                    na_method = "intersection",
+calc_correlation_matrix <- function(stock_data, na_method = "intersection",
                                     freq_data = "monthly") {
-
   freq_data <- match.arg(freq_data, c("daily", "weekly", "monthly"))
 
   ret_matrix <- .prepare_returns_matrix(stock_data, na_method = na_method)
-
   if (freq_data != "daily") {
     ret_matrix <- .aggregate_returns(ret_matrix, freq = freq_data,
                                      dates = attr(ret_matrix, "dates"))
   }
 
-  resultado <- stats::cor(ret_matrix)
+  use_arg <- switch(na_method,
+                    intersection = "everything",
+                    pairwise     = "pairwise.complete.obs",
+                    locf         = "complete.obs"
+  )
+
+  resultado <- stats::cor(ret_matrix, use = use_arg)
   attr(resultado, "freq_data") <- freq_data
   resultado
 }

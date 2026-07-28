@@ -10,6 +10,9 @@
 #' @param annualize Logical. If \code{TRUE}, annualizes return and risk.
 #' @param periods_per_year Integer. Default 252 for daily, 12 for monthly.
 #' @param na_method Character. Passed to \code{.prepare_returns_matrix()}.
+#'   Note: with \code{"pairwise"}, the resulting covariance matrix is not
+#'   guaranteed to be positive semi-definite, which can destabilize the
+#'   optimization -- prefer \code{"intersection"} if in doubt.
 #' @param expected_returns Optional. Pre-computed expected returns, e.g. from
 #'   \code{\link{calc_expected_return}}. Must be computed at the same
 #'   \code{freq_data} as this call, or annualization will be inconsistent
@@ -128,7 +131,12 @@ calc_efficient_frontier <- function(stock_data = NULL,
     }
 
     if (is.null(cov_matrix)) {
-      cov_matrix <- stats::cov(ret_matrix)
+      use_arg <- switch(na_method,
+                        intersection = "everything",
+                        pairwise     = "pairwise.complete.obs",
+                        locf         = "complete.obs"
+      )
+      cov_matrix <- stats::cov(ret_matrix, use = use_arg)
     }
   }
 
