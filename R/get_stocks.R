@@ -133,6 +133,7 @@ get_stocks <- function(tickers,
           last_date = to,
           freq_data = freq,
           type_return = "log",
+          thresh_bad_data = 0,
           be_quiet = TRUE
         ),
 
