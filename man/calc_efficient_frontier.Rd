@@ -32,7 +32,10 @@ daily data, more observations than yearly).}
 
 \item{periods_per_year}{Integer. Default 252 for daily, 12 for monthly.}
 
-\item{na_method}{Character. Passed to \code{.prepare_returns_matrix()}.}
+\item{na_method}{Character. Passed to \code{.prepare_returns_matrix()}.
+Note: with \code{"pairwise"}, the resulting covariance matrix is not
+guaranteed to be positive semi-definite, which can destabilize the
+optimization -- prefer \code{"intersection"} if in doubt.}
 
 \item{expected_returns}{Optional. Pre-computed expected returns, e.g. from
 \code{\link{calc_expected_return}}. Must be computed at the same

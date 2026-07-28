@@ -41,6 +41,15 @@ If you pass the result into \code{\link{calc_efficient_frontier}} via its
 \code{cov_matrix} argument, make sure to use the same \code{freq_data} in
 both calls -- otherwise annualization will be inconsistent (a warning is
 raised in that case).
+
+When \code{na_method = "pairwise"}, each cell of the matrix is computed
+from the dates common to that specific pair of assets, which can use more
+of each asset's history than \code{"intersection"}. Be aware this does not
+guarantee the resulting matrix is positive semi-definite, since different
+cells may be estimated from different subsets of dates -- this can lead to
+an invalid covariance structure and unstable optimization results
+downstream. Inspect the matrix (e.g. \code{eigen(result)$values}) before
+relying on it, or prefer \code{"intersection"} if in doubt.
 }
 \examples{
 \dontrun{

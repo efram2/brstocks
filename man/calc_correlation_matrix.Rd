@@ -43,6 +43,12 @@ Daily correlation between assets that trade on different exchanges (e.g.
 B3 vs. NYSE) tends to be understated, because information from one market
 does not reach the other instantaneously (the "Epps effect"). Aggregating
 to a lower frequency, as done by default here, mitigates this.
+
+When \code{na_method = "pairwise"}, each cell of the matrix is computed
+from the dates common to that specific pair of assets. Be aware this does
+not guarantee the resulting matrix is positive semi-definite -- inspect it
+(e.g. \code{eigen(result)$values}) before relying on it downstream, or
+prefer \code{"intersection"} if in doubt.
 }
 \examples{
 \dontrun{

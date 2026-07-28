@@ -11,5 +11,10 @@ Provides tools to retrieve and analyze historical stock data from the Brazilian 
 \author{
 \strong{Maintainer}: Joao Paulo dos Santos Pereira Barbosa \email{joao.31582129@gmail.com}
 
+Authors:
+\itemize{
+  \item Joao Paulo dos Santos Pereira Barbosa \email{joao.31582129@gmail.com}
+}
+
 }
 \keyword{internal}
