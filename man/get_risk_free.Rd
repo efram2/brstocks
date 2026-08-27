@@ -36,7 +36,7 @@ brstocks. \pkg{brfinance} owns that complexity now.
 \examples{
 \dontrun{
 cdi <- get_risk_free("cdi", from = "2024-01-01")
-mean(cdi$taxa)  # taxa média diária no período
+mean(cdi$taxa)  # average daily rate over the period
 
 selic <- get_risk_free("selic", from = "2024-01-01")
 mean(selic$taxa)

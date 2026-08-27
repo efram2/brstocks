@@ -25,10 +25,9 @@ Because these points come from Monte Carlo simulation (not a closed-form
 optimizer), they are the \emph{best approximation found among the simulated
 portfolios} -- not the true mathematical optimum. Increasing
 \code{n_portfolios} in \code{\link{calc_efficient_frontier}} improves the
-approximation. For an exact solution, an analytical quadratic-programming
-approach (e.g. via the \code{quadprog} package) would be a natural next
-step -- deliberately left out for now to keep the optimization surface
-small while it's just this one Monte Carlo path.
+approximation, but never guarantees it. For the exact solution, see
+\code{\link{calc_exact_portfolios}}, which solves the same three
+portfolios analytically (via quadratic programming) instead of simulating.
 }
 \examples{
 \dontrun{

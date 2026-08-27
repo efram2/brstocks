@@ -25,7 +25,7 @@
 #' @examples
 #' \dontrun{
 #' cdi <- get_risk_free("cdi", from = "2024-01-01")
-#' mean(cdi$taxa)  # taxa média diária no período
+#' mean(cdi$taxa)  # average daily rate over the period
 #'
 #' selic <- get_risk_free("selic", from = "2024-01-01")
 #' mean(selic$taxa)
@@ -35,22 +35,22 @@
 get_risk_free <- function(rate = "cdi", 
                           from = NULL, 
                           to = NULL) {
-
+  
   rate <- match.arg(rate, c("cdi", "selic"))
-
+  
   from <- .normalize_date(from, TRUE)
   to   <- .normalize_date(to, FALSE)
-
+  
   from_chr <- as.character(from)
   to_chr   <- as.character(to)
-
+  
   brutos <- switch(rate,
-    "cdi"   = brfinance::get_cdi_rate(start_date = from_chr, end_date = to_chr,
-                                      language = "eng", labels = FALSE),
-    "selic" = brfinance::get_selic_rate(start_date = from_chr, end_date = to_chr,
-                                        language = "eng", labels = FALSE)
+                   "cdi"   = brfinance::get_cdi_rate(start_date = from_chr, end_date = to_chr,
+                                                     language = "eng", labels = FALSE),
+                   "selic" = brfinance::get_selic_rate(start_date = from_chr, end_date = to_chr,
+                                                       language = "eng", labels = FALSE)
   )
-
+  
   dplyr::transmute(
     brutos,
     ref_date = as.Date(date),
