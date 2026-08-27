@@ -21,7 +21,8 @@ Imports:
     tidyr,
     yfR,
     zoo,
-    brfinance
+    brfinance,
+    quadprog
 Suggests:
     shiny,
     bslib,
