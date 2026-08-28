@@ -1,6 +1,6 @@
 Package: brstocks
 Title: Brazilian Stock Market Data and Analysis
-Version: 0.0.4.9000
+Version: 0.0.6.9000
 Authors@R: 
     person("Joao Paulo", "dos Santos Pereira Barbosa", 
            email = "joao.31582129@gmail.com", 
@@ -12,7 +12,6 @@ Description: Provides tools to retrieve and analyze historical stock data
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Imports:
     dplyr,
     ggplot2,
@@ -23,7 +22,7 @@ Imports:
     yfR,
     zoo,
     brfinance,
-    httr2
+    quadprog
 Suggests:
     shiny,
     bslib,
@@ -33,3 +32,4 @@ Suggests:
     purrr,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

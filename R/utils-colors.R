@@ -6,6 +6,6 @@
 # API. Because they are defined in the package namespace, every function
 # in R/ can use them directly without an explicit import.
 
-brstocks_cor_azul    <- "#0B3D91"
-brstocks_cor_vermelho <- "#C81E3A"
+brstocks_cor_azul    <- "#1E3A5F"
+brstocks_cor_vermelho <- "#CC0000"
 brstocks_cor_dourado  <- "#C9A227"

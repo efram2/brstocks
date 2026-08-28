@@ -14,34 +14,43 @@
 #'   as a decimal -- e.g. \code{0.0004} means 0.04% a.d.).
 #'
 #' @details
-#' brstocks used to hit the BCB/SGS API directly for this. It now delegates
-#' to \pkg{brfinance} instead, which already wraps that API (with its own
-#' internal series-fetching helper) and is a dependency shared with
-#' brstocks' sibling package.
+#' brstocks used to hit the BCB/SGS API directly for the SELIC series (via an
+#' internal \code{.get_sgs_series()} helper), while CDI already delegated to
+#' \pkg{brfinance}. Both rates now delegate to \pkg{brfinance} --
+#' \code{brfinance::get_selic_rate()} already returns daily SELIC data, so
+#' there is no longer any reason to keep a second, unmaintained copy of the
+#' SGS-fetching logic (with its own date chunking, retries, etc.) inside
+#' brstocks. \pkg{brfinance} owns that complexity now.
 #'
 #' @examples
 #' \dontrun{
 #' cdi <- get_risk_free("cdi", from = "2024-01-01")
-#' mean(cdi$taxa)  # taxa média diária no período
+#' mean(cdi$taxa)  # average daily rate over the period
+#'
+#' selic <- get_risk_free("selic", from = "2024-01-01")
+#' mean(selic$taxa)
 #' }
 #'
 #' @export
-get_risk_free <- function(rate = "cdi", from = NULL, to = NULL) {
-
+get_risk_free <- function(rate = "cdi", 
+                          from = NULL, 
+                          to = NULL) {
+  
   rate <- match.arg(rate, c("cdi", "selic"))
-
+  
   from <- .normalize_date(from, TRUE)
   to   <- .normalize_date(to, FALSE)
-
+  
   from_chr <- as.character(from)
   to_chr   <- as.character(to)
-
+  
   brutos <- switch(rate,
                    "cdi"   = brfinance::get_cdi_rate(start_date = from_chr, end_date = to_chr,
                                                      language = "eng", labels = FALSE),
-                   "selic" = .get_sgs_series(11, start_date = from_chr, end_date = to_chr)
+                   "selic" = brfinance::get_selic_rate(start_date = from_chr, end_date = to_chr,
+                                                       language = "eng", labels = FALSE)
   )
-
+  
   dplyr::transmute(
     brutos,
     ref_date = as.Date(date),
@@ -58,7 +67,10 @@ get_risk_free <- function(rate = "cdi", from = NULL, to = NULL) {
 #' @inheritParams get_risk_free
 #' @return A single numeric value (average daily rate as a decimal).
 #' @export
-calc_avg_risk_free <- function(rate = "cdi", from = NULL, to = NULL) {
+calc_avg_risk_free <- function(rate = "cdi", 
+                               from = NULL, 
+                               to = NULL) {
+  
   serie <- get_risk_free(rate, from, to)
   mean(serie$taxa, na.rm = TRUE)
 }

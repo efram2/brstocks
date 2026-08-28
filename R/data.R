@@ -9,6 +9,9 @@
 #' data are found, it retries using the \code{".SA"} suffix
 #' (e.g. \code{"PETR4"} \eqn{\rightarrow} \code{"PETR4.SA"}). If neither
 #' version is available, a warning is issued and the ticker is skipped.
+#' Tickers already prefixed with \code{"^"} (indices, e.g. \code{"^BVSP"})
+#' skip the \code{.SA} fallback entirely, since that suffix never applies to
+#' index tickers.
 #'
 #' Date inputs are flexible and may be supplied as complete dates
 #' (\code{"YYYY-MM-DD"}), year-month (\code{"YYYY-MM"}) or year only
@@ -59,6 +62,11 @@
 #'   \item{ret_closing_prices}{Log return based on closing prices.}
 #'   \item{cumret_adjusted_prices}{Cumulative return (base = 1).}
 #' }
+#'
+#' The returned tibble also carries a \code{"download_report"} attribute --
+#' a data frame with one row per requested ticker, its resolved Yahoo symbol
+#' (or \code{NA} if not found), and a status column -- so callers can inspect
+#' which tickers failed without having to parse warnings.
 #'
 #' @examples
 #' \dontrun{
@@ -133,6 +141,7 @@ get_stocks <- function(tickers,
           last_date = to,
           freq_data = freq,
           type_return = "log",
+          thresh_bad_data = 0,
           be_quiet = TRUE
         ),
 
@@ -196,4 +205,73 @@ get_stocks <- function(tickers,
 
   dados
 
+}
+
+# ---------------------------------------------------------------------
+# Supported benchmarks: short code -> Yahoo ticker + display name.
+# Kept as a named list (not a bare switch()) so adding a new benchmark is a
+# one-line change here, and so plot_benchmark() can read the display name
+# back from an attribute instead of re-deriving it from the code.
+# ---------------------------------------------------------------------
+.brstocks_benchmark_map <- list(
+  "BR"     = list(ticker = "^BVSP",  nome = "Ibovespa"),
+  "US"     = list(ticker = "^GSPC",  nome = "S&P 500"),
+  "NASDAQ" = list(ticker = "^IXIC",  nome = "Nasdaq Composite"),
+  "DOW"    = list(ticker = "^DJI",   nome = "Dow Jones Industrial Average"),
+  "SMALL"  = list(ticker = "SMAL11", nome = "ETF Small Caps Brasil (SMAL11)"),
+  "WORLD"  = list(ticker = "URTH",   nome = "MSCI World (ETF URTH)")
+)
+
+#' Get historical benchmark index data
+#'
+#' Retrieves historical data for a market benchmark index or reference ETF.
+#' Internally calls \code{\link{get_stocks}}.
+#'
+#' @param market Character. Benchmark to retrieve. One of \code{"BR"}
+#'   (default, Ibovespa), \code{"US"} (S&P 500), \code{"NASDAQ"} (Nasdaq
+#'   Composite), \code{"DOW"} (Dow Jones), \code{"SMALL"} (Brazilian small
+#'   caps, via the SMAL11 ETF), or \code{"WORLD"} (MSCI World, via the URTH
+#'   ETF).
+#' @param from Start date. Accepts \code{Date} or character in \code{"YYYY-MM-DD"}
+#'   format. Defaults to 365 days before today.
+#' @param to End date. Accepts \code{Date} or character in \code{"YYYY-MM-DD"}
+#'   format. Defaults to today.
+#' @param freq Data frequency. One of \code{"daily"} (default), \code{"weekly"},
+#'   \code{"monthly"}, or \code{"yearly"}.
+#'
+#' @return A tibble with the same structure as \code{\link{get_stocks}}. The
+#'   chosen benchmark's short code and display name are attached as the
+#'   \code{"benchmark_market"} and \code{"benchmark_nome"} attributes, so
+#'   downstream functions like \code{\link{plot_benchmark}} can label plots
+#'   correctly without re-implementing this mapping.
+#'
+#' @examples
+#' \dontrun{
+#' get_benchmark()
+#' get_benchmark(market = "US", from = "2020-01-01")
+#' get_benchmark(market = "SMALL", freq = "monthly")
+#' }
+#'
+#' @export
+get_benchmark <- function(market = "BR",
+                          from   = NULL,
+                          to     = NULL,
+                          freq   = "daily") {
+
+  if (!market %in% names(.brstocks_benchmark_map)) {
+    stop(
+      "Unsupported 'market'. Use one of: ",
+      paste(names(.brstocks_benchmark_map), collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  info <- .brstocks_benchmark_map[[market]]
+
+  dados <- get_stocks(info$ticker, from = from, to = to, freq = freq)
+
+  attr(dados, "benchmark_market") <- market
+  attr(dados, "benchmark_nome")   <- info$nome
+
+  dados
 }

@@ -50,6 +50,10 @@ DIC <- list(
     hover_help = "Passe o mouse sobre qualquer ponto da fronteira para ver a composição daquela carteira.",
     carteiras_chave = "Carteiras-chave",
     comparar_label = "Comparar qual carteira?",
+    rebalance_dias_label = "Dias úteis entre rebalanceamentos",
+    turnover_custo_label = "Custo de turnover (%)",
+    bloco_backtest_label = "Backtest walk-forward (Portfolio vs Benchmark / Contributions)",
+    aviso_backtest = "Esta aba roda um backtest walk-forward de verdade: em cada rebalanceamento, os pesos são reestimados usando só os dados até aquela data (nunca dados futuros, sempre a partir de retornos mensais, como na Fronteira Eficiente), e o custo de turnover informado é descontado do valor da carteira a cada rebalanceamento, proporcional ao quanto os pesos mudaram. Os primeiros dias do período ficam de fora do gráfico -- são usados só para acumular histórico suficiente antes do primeiro rebalanceamento.",
     titulo_fronteira = "Fronteira Eficiente",
     titulo_correlacao = "Matriz de Correlação",
     titulo_vs_bench = "Retorno Acumulado — Carteira vs. Benchmark",
@@ -63,7 +67,7 @@ DIC <- list(
     etf_texto = "Um ETF (Exchange Traded Fund, ou Fundo de Índice) é negociado na bolsa como uma ação comum, mas seu objetivo é replicar o desempenho de um índice de referência, em vez de representar uma empresa só. Por isso, os ativos marcados como ETF na tabela abaixo estão ligados a um índice específico — o Ibovespa, o S&P 500, o preço do ouro, um índice global de ações etc.",
     pressupostos_titulo = "Pressupostos do modelo (leia antes de tirar conclusões)",
     pressupostos_itens = c(
-      "Rebalanceamento diário assumido: a simulação mantém os pesos fixos como se a carteira fosse rebalanceada todo dia útil — na prática isso geraria custos de corretagem e impostos não considerados aqui.",
+      "Rebalanceamento diário assumido apenas na aba \"Efficient Frontier\" (a fronteira e a tabela de carteiras notáveis refletem pesos fixos, estimados com o período inteiro, sem custos de rebalanceamento). As abas \"Portfolio vs Benchmark\" e \"Contributions\" são diferentes: ambas rodam um backtest walk-forward de verdade (nunca olham dados futuros para decidir pesos passados), com dias úteis entre rebalanceamentos e custo de turnover configuráveis na barra lateral.",
       "A fronteira é uma aproximação por simulação (Monte Carlo), não um otimizador exato — os pontos de mínima variância / máximo Sharpe / máximo retorno são os melhores encontrados entre as carteiras simuladas, não o ótimo matemático.",
       "O CDI é usado como proxy da taxa livre de risco, obtido direto do Banco Central — não de um fundo específico, para não misturar taxa de administração ou erro de rastreamento na comparação.",
       "O retorno anualizado do Simulador de Aportes é uma aproximação (não uma TIR/XIRR ponderada pelo momento de cada aporte) — serve como ordem de grandeza, não como retorno exato de fundo.",
@@ -82,7 +86,6 @@ DIC <- list(
     titulo_aportes = "Evolução do patrimônio com aportes",
     legenda_saldo = "Patrimônio", legenda_investido = "Total investido",
     resumo_investido = "Total investido", resumo_saldo = "Patrimônio final", resumo_ganho = "Ganho",
-    aviso_rebalanceamento = "Hipótese do modelo: a simulação assume que a carteira é rebalanceada diariamente para manter os pesos fixos no ponto escolhido (mínima variância / máximo Sharpe / máximo retorno). Na prática isso exigiria comprar e vender ativos todo dia útil, o que gera custos de corretagem e impostos não considerados aqui.",
     legenda_carteira = "Sua carteira", legenda_benchmark = "Benchmark (mesmos aportes)", legenda_cdi = "CDI (mesmos aportes)",
     col_serie = "Onde investiu", col_ganho_nominal = "Ganho (R$)", col_ganho_pct = "Ganho total (%)", col_ganho_anual = "Retorno anualizado (%)",
     aviso_anualizacao = "O retorno anualizado aqui é uma aproximação simples (ganho total elevado a 252/nº de dias úteis do período) — não é uma taxa interna de retorno (XIRR) ponderada pelo momento exato de cada aporte. Serve como ordem de grandeza pra comparar as três opções, não como retorno exato de fundo.",
@@ -105,6 +108,10 @@ DIC <- list(
     hover_help = "Hover over any point on the frontier to see that portfolio's composition.",
     carteiras_chave = "Key portfolios",
     comparar_label = "Compare which portfolio?",
+    rebalance_dias_label = "Trading days between rebalances",
+    turnover_custo_label = "Turnover cost (%)",
+    bloco_backtest_label = "Walk-forward backtest (Portfolio vs Benchmark / Contributions)",
+    aviso_backtest = "This tab runs a true walk-forward backtest: at each rebalance, weights are re-estimated using only data available up to that date (never future data, always from monthly-aggregated returns, matching the Efficient Frontier tab), and the given turnover cost is deducted from the portfolio's value at each rebalance, proportional to how much the weights actually changed. The first days of the selected period are left out of the chart -- they're used only to build up enough history before the first rebalance.",
     titulo_fronteira = "Efficient Frontier",
     titulo_correlacao = "Correlation Matrix",
     titulo_vs_bench = "Cumulative Return — Portfolio vs. Benchmark",
@@ -118,7 +125,7 @@ DIC <- list(
     etf_texto = "An ETF (Exchange Traded Fund) trades on the exchange like a regular stock, but its goal is to replicate the performance of a reference index rather than represent a single company. That's why the assets marked as ETFs in the table below are tied to a specific index — the Ibovespa, the S&P 500, the price of gold, a global equity index, and so on.",
     pressupostos_titulo = "Model assumptions (read before drawing conclusions)",
     pressupostos_itens = c(
-      "Daily rebalancing assumed: the simulation keeps weights fixed as if the portfolio were rebalanced every trading day -- in practice this would incur brokerage costs and taxes not modeled here.",
+      "Daily rebalancing assumed only on the \"Efficient Frontier\" tab (the frontier and the key-portfolios table reflect fixed weights, estimated over the whole period, with no rebalancing costs modeled). The \"Portfolio vs Benchmark\" and \"Contributions\" tabs are different: both run a true walk-forward backtest (never looking at future data to decide past weights), with trading days between rebalances and turnover cost configurable in the sidebar.",
       "The frontier is a Monte Carlo approximation, not an exact optimizer -- the minimum-variance / maximum-Sharpe / maximum-return points are the best found among the simulated portfolios, not the true mathematical optimum.",
       "CDI is used as the risk-free proxy, fetched directly from the Central Bank -- not from a specific fund, to avoid mixing in management fees or tracking error.",
       "The annualized return in the Contributions Simulator is an approximation (not a money-weighted IRR/XIRR) -- it's an order-of-magnitude comparison, not an exact fund-style return.",
@@ -137,7 +144,6 @@ DIC <- list(
     titulo_aportes = "Portfolio growth with contributions",
     legenda_saldo = "Balance", legenda_investido = "Total contributed",
     resumo_investido = "Total contributed", resumo_saldo = "Final balance", resumo_ganho = "Gain",
-    aviso_rebalanceamento = "Model assumption: the simulation assumes the portfolio is rebalanced daily to keep fixed weights at the chosen point (min variance / max Sharpe / max return). In practice this would require buying and selling assets every trading day, incurring brokerage costs and taxes not modeled here.",
     legenda_carteira = "Your portfolio", legenda_benchmark = "Benchmark (same contributions)", legenda_cdi = "CDI (same contributions)",
     col_serie = "Invested in", col_ganho_nominal = "Gain (R$)", col_ganho_pct = "Total gain (%)", col_ganho_anual = "Annualized return (%)",
     aviso_anualizacao = "The annualized return here is a simple approximation (total gain raised to 252/number of trading days in the period) -- it is not a money-weighted internal rate of return (XIRR) accounting for the exact timing of each contribution. Use it as an order-of-magnitude comparison across the three options, not as an exact fund return.",
@@ -185,7 +191,7 @@ ui <- page_sidebar(
   theme = bs_theme(version = 5, bg = "#FFFFFF", fg = "#1A1A2E",
                    primary = COR_AZUL, danger = COR_VERM, warning = COR_OURO,
                    base_font = font_google("Inter")),
-
+  
   sidebar = sidebar(
     width = 320, class = "compact-sidebar",
     textInput("tickers", "Ativos (separados por vírgula)", value = "PETR4, VALE3, ITUB4, BBDC4"),
@@ -203,9 +209,17 @@ ui <- page_sidebar(
     checkboxInput("anualizar", "Anualizar retorno/risco (x252)", value = TRUE),
     actionButton("simular", "Simular carteira", class = "btn-primary"),
     hr(),
+    div(id = "bloco_backtest",
+        uiOutput("bloco_backtest_label", inline = TRUE),
+        numericInput("rebalance_dias", "Dias úteis entre rebalanceamentos",
+                     value = 21, min = 1, step = 1),
+        numericInput("turnover_custo", "Custo de turnover (%)",
+                     value = 0, min = 0, max = 100, step = 0.1)
+    ),
+    hr(),
     uiOutput("hover_help_txt")
   ),
-
+  
   tags$style(HTML("
     .tab-content { margin-top: 20px; }
     .compact-sidebar .form-group { margin-bottom: 10px; }
@@ -227,7 +241,7 @@ ui <- page_sidebar(
     .footer-icon-link:hover { color: #0B3D91; }
     .footer-icon-link svg { width: 15px; height: 15px; fill: currentColor; }
   ")),
-
+  
   navset_tab(
     nav_panel(
       "Efficient Frontier",
@@ -244,6 +258,7 @@ ui <- page_sidebar(
                   choices = c("Máximo Sharpe" = "Maximo Sharpe",
                               "Mínima Variância" = "Minima Variancia",
                               "Máximo Retorno" = "Maximo Retorno")),
+      uiOutput("aviso_backtest"),
       plotlyOutput("plot_vs_benchmark", height = "550px")
     ),
     nav_panel(
@@ -287,7 +302,7 @@ ui <- page_sidebar(
       )
     )
   ),
-
+  
   uiOutput("rodape")
 )
 
@@ -295,9 +310,9 @@ ui <- page_sidebar(
 # SERVER
 # ---------------------------------------------------------------------
 server <- function(input, output, session) {
-
+  
   dic <- reactive(DIC[[input$idioma]])
-
+  
   # Update input labels when the language toggle changes.
   # Function and package names remain in English; only UI text is affected.
   observeEvent(input$idioma, {
@@ -311,6 +326,8 @@ server <- function(input, output, session) {
     updateCheckboxInput(session, "anualizar", label = d$anualizar_label)
     updateActionButton(session, "simular", label = d$simular_label)
     updateSelectInput(session, "carteira_escolhida", label = d$comparar_label)
+    updateNumericInput(session, "rebalance_dias", label = d$rebalance_dias_label)
+    updateNumericInput(session, "turnover_custo", label = d$turnover_custo_label)
     updateSelectInput(session, "carteira_aportes", label = d$carteira_aportes_label)
     updateNumericInput(session, "aporte_inicial", label = d$aporte_inicial_label)
     updateNumericInput(session, "aporte_periodico", label = d$aporte_periodico_label)
@@ -322,11 +339,11 @@ server <- function(input, output, session) {
                       selected = input$periodicidade)
     updateActionButton(session, "simular_aportes", label = d$simular_aportes_label)
   }, ignoreInit = TRUE)
-
+  
   output$hover_help_txt  <- renderUI(helpText(dic()$hover_help))
   output$titulo_key <- renderText(dic()$carteiras_chave)
   output$titulo_app <- renderText(dic()$titulo_dashboard)
-
+  
   # ---- Footer: minimal, always visible at the end of the page content ----
   output$rodape <- renderUI({
     d <- dic()
@@ -345,7 +362,7 @@ server <- function(input, output, session) {
       span(d$rodape_fonte)
     )
   })
-
+  
   output$aviso_muitos_ativos <- renderUI({
     n_tickers <- length(trimws(strsplit(input$tickers, ",")[[1]]))
     if (n_tickers > 10) {
@@ -356,7 +373,7 @@ server <- function(input, output, session) {
       div(class = "alert alert-secondary", style = "font-size: 0.8em; padding: 6px;", msg)
     }
   })
-
+  
   # ---- Portfolio data: assets, risk-free rate, efficient frontier, key
   # portfolios. Depends only on tickers/dates/n_portfolios/risk-free/
   # annualize -- deliberately NEVER on the benchmark selector, so switching
@@ -364,7 +381,7 @@ server <- function(input, output, session) {
   dados_portfolio <- eventReactive(input$simular, {
     tickers_vec <- trimws(strsplit(input$tickers, ",")[[1]])
     validate(need(length(tickers_vec) >= 2, "Informe pelo menos 2 ativos. / Enter at least 2 assets."))
-
+    
     withProgress(message = "Simulando...", value = 0, {
       incProgress(0.2); acoes <- get_stocks(tickers_vec, from = input$datas[1], to = input$datas[2])
       incProgress(0.2)
@@ -375,10 +392,10 @@ server <- function(input, output, session) {
                                            risk_free = rf, annualize = input$anualizar)
       incProgress(0.15); key <- calc_key_portfolios(fronteira)
       incProgress(0.15)
-      list(acoes = acoes, fronteira = fronteira, key = key)
+      list(acoes = acoes, fronteira = fronteira, key = key, rf = rf)
     })
   })
-
+  
   # ---- Benchmark data: downloaded independently of the portfolio/frontier.
   # Reacts automatically to the benchmark selector (no button click needed)
   # once a portfolio has been simulated. Feeds ONLY the beta table and the
@@ -390,7 +407,57 @@ server <- function(input, output, session) {
     beta_tbl <- calc_beta(dados_portfolio()$acoes, bench)
     list(bench = bench, beta = beta_tbl)
   })
-
+  
+  # ---- Walk-forward backtest for the "Portfolio vs Benchmark" tab.
+  # Unlike dados_portfolio()$fronteira/key (fit once on the whole period,
+  # in-sample), this re-estimates weights at each rebalance using only data
+  # up to that date -- see calc_walkforward_backtest()'s documentation for
+  # why that distinction matters. min_window is fixed at 252 (~1 trading
+  # year) rather than exposed as a control, to keep the sidebar focused on
+  # the two knobs that were actually asked for.
+  backtest_dados <- reactive({
+    req(dados_portfolio())
+    
+    tipo_map <- c("Maximo Sharpe"    = "max_sharpe",
+                  "Minima Variancia" = "min_variance",
+                  "Maximo Retorno"   = "max_return")
+    
+    resultado <- tryCatch(
+      calc_walkforward_backtest(
+        dados_portfolio()$acoes,
+        portfolio_type  = tipo_map[[input$carteira_escolhida]],
+        rebalance_every = input$rebalance_dias,
+        min_window      = 252,
+        turnover_cost   = input$turnover_custo / 100,
+        risk_free       = dados_portfolio()$rf
+      ),
+      error = function(e) e
+    )
+    
+    # IMPORTANTE: shiny::need() forca a avaliacao do argumento `message`
+    # mesmo quando a condicao passa (nao e' preguicoso como parece) -- por
+    # isso conditionMessage(resultado) precisa ficar dentro de um if() de
+    # verdade, calculado ANTES do need(), nunca dentro dele. Chamar
+    # conditionMessage() direto num tibble de sucesso e' o que causava
+    # o erro "no applicable method for conditionMessage".
+    erro_msg <- if (inherits(resultado, "error")) {
+      if (input$idioma == "pt")
+        paste("Não foi possível rodar o backtest:", conditionMessage(resultado))
+      else
+        paste("Could not run the backtest:", conditionMessage(resultado))
+    } else {
+      NULL
+    }
+    validate(need(is.null(erro_msg), erro_msg))
+    
+    resultado
+  })
+  
+  output$aviso_backtest <- renderUI({
+    div(class = "alert alert-secondary text-justify", style = "font-size: 0.85em;",
+        dic()$aviso_backtest)
+  })
+  
   output$plot_fronteira <- renderPlotly({
     req(dados_portfolio())
     d <- dic()
@@ -399,7 +466,7 @@ server <- function(input, output, session) {
       mutate(simbolo = c("Minima Variancia" = "triangle-up",
                          "Maximo Sharpe"    = "star",
                          "Maximo Retorno"   = "square")[tipo])
-
+    
     fr$hover_txt <- purrr::pmap_chr(
       list(fr$retorno, fr$risco, fr$sharpe, fr$pesos),
       function(ret, risk, sharpe, w) {
@@ -410,7 +477,7 @@ server <- function(input, output, session) {
                paste(names(top5), percent(as.numeric(top5), accuracy = 0.1), sep = ": ", collapse = "<br>"))
       }
     )
-
+    
     plot_ly() |>
       add_trace(data = fr, x = ~risco, y = ~retorno, type = "scattergl", mode = "markers",
                 marker = list(color = ~sharpe, colorscale = list(c(0, COR_VERM), c(1, COR_AZUL)),
@@ -424,7 +491,7 @@ server <- function(input, output, session) {
              yaxis = list(title = d$eixo_retorno, tickformat = ".1%"),
              plot_bgcolor = "#FAFAFA", paper_bgcolor = "#FFFFFF", showlegend = FALSE)
   })
-
+  
   output$tabela_key <- renderDT({
     req(dados_portfolio())
     tabela <- dados_portfolio()$key |>
@@ -446,14 +513,14 @@ server <- function(input, output, session) {
               selection = "none",
               colnames = c("Carteira", "Retorno", "Risco", "Sharpe", "Composição (top 5)"))
   })
-
+  
   # Correlation heatmap, rendered with plotly for visual consistency with
   # the remaining plots in this dashboard.
   output$plot_correlacao <- renderPlotly({
     req(dados_portfolio())
     d <- dic()
     cor_mat <- suppressWarnings(calc_correlation_matrix(dados_portfolio()$acoes))
-
+    
     plot_ly(
       x = colnames(cor_mat), y = rownames(cor_mat), z = cor_mat, type = "heatmap",
       colorscale = list(c(0, COR_VERM), c(0.5, "#FFFFFF"), c(1, COR_AZUL)),
@@ -464,32 +531,32 @@ server <- function(input, output, session) {
              margin = list(t = 60, b = 40)) |>
       config(displayModeBar = FALSE)
   })
-
+  
   output$tabela_beta <- renderDT({
     req(dados_benchmark())
     datatable(dados_benchmark()$beta, options = list(pageLength = 10, ordering = FALSE), rownames = FALSE,
               selection = "none")
   })
-
+  
   output$plot_vs_benchmark <- renderPlotly({
-    req(dados_portfolio(), dados_benchmark())
+    req(backtest_dados(), dados_benchmark())
     d <- dic()
-    pesos_sel <- dados_portfolio()$key |> filter(tipo == input$carteira_escolhida) |> pull(pesos) |> (\(x) x[[1]])()
-
-    retornos_wide <- dados_portfolio()$acoes |>
-      filter(ticker %in% names(pesos_sel), !is.na(ret_adjusted_prices)) |>
-      select(ticker, ref_date, ret_adjusted_prices) |>
-      pivot_wider(names_from = ticker, values_from = ret_adjusted_prices) |>
-      arrange(ref_date) |> tidyr::drop_na()
-
-    matriz <- as.matrix(retornos_wide[, names(pesos_sel)])
-    ret_carteira <- as.numeric(matriz %*% pesos_sel[colnames(matriz)])
-
-    carteira_df <- dplyr::tibble(ref_date = retornos_wide$ref_date,
-                                 valor = exp(cumsum(ret_carteira)), serie = "Carteira")
-    bench_df <- dados_benchmark()$bench |> filter(ref_date >= min(carteira_df$ref_date)) |>
-      transmute(ref_date, valor = cumret_adjusted_prices, serie = "Benchmark")
-
+    
+    carteira_df <- backtest_dados() |>
+      transmute(ref_date, valor = value, serie = "Carteira")
+    
+    # Rebaseia o benchmark para comecar em 1 na mesma data em que a
+    # carteira comeca (o backtest so comeca depois do 1o rebalanceamento,
+    # ou seja, mais tarde que o inicio do periodo selecionado -- sem
+    # rebasear aqui, o benchmark comecaria de um valor != 1 e a comparacao
+    # visual ficaria injusta).
+    bench_df <- dados_benchmark()$bench |>
+      filter(ref_date >= min(carteira_df$ref_date)) |>
+      arrange(ref_date) |>
+      transmute(ref_date,
+                valor = cumret_adjusted_prices / cumret_adjusted_prices[1],
+                serie = "Benchmark")
+    
     plot_ly(bind_rows(carteira_df, bench_df), x = ~ref_date, y = ~valor, color = ~serie,
             colors = c("Carteira" = COR_AZUL, "Benchmark" = COR_VERM),
             type = "scatter", mode = "lines") |>
@@ -497,7 +564,7 @@ server <- function(input, output, session) {
              yaxis = list(title = paste0(d$eixo_retorno, " (base = 1)")),
              plot_bgcolor = "#FAFAFA", paper_bgcolor = "#FFFFFF")
   })
-
+  
   # ---- Contribution simulator ----
   # fator_diario: the day's growth multiplier. Use exp(log_return) for
   # equities/benchmark series, or (1 + rate) for a simple periodic rate
@@ -509,12 +576,12 @@ server <- function(input, output, session) {
                          trimestral = paste0(format(datas, "%Y"), "-T", ceiling(as.numeric(format(datas, "%m")) / 3)),
                          semestral  = paste0(format(datas, "%Y"), "-S", ceiling(as.numeric(format(datas, "%m")) / 6))
     )
-
+    
     n <- length(datas)
     saldo <- numeric(n); investido <- numeric(n)
     saldo_atual <- aporte_inicial; total_investido <- aporte_inicial
     periodo_anterior <- id_periodo[1]
-
+    
     for (i in seq_len(n)) {
       if (i > 1 && id_periodo[i] != periodo_anterior) {
         saldo_atual <- saldo_atual + aporte_periodico
@@ -525,58 +592,99 @@ server <- function(input, output, session) {
       saldo[i] <- saldo_atual
       investido[i] <- total_investido
     }
-
+    
     dplyr::tibble(ref_date = datas, saldo = saldo, investido = investido)
   }
-
+  
   aportes_dados <- eventReactive(input$simular_aportes, {
     req(dados_portfolio(), dados_benchmark())
-    pesos_sel <- dados_portfolio()$key |> filter(tipo == input$carteira_aportes) |> pull(pesos) |> (\(x) x[[1]])()
-
-    retornos_wide <- dados_portfolio()$acoes |>
-      filter(ticker %in% names(pesos_sel), !is.na(ret_adjusted_prices)) |>
-      select(ticker, ref_date, ret_adjusted_prices) |>
-      pivot_wider(names_from = ticker, values_from = ret_adjusted_prices) |>
-      arrange(ref_date) |> tidyr::drop_na()
-
-    matriz <- as.matrix(retornos_wide[, names(pesos_sel)])
-    ret_carteira <- as.numeric(matriz %*% pesos_sel[colnames(matriz)])
-
+    
+    tipo_map <- c("Maximo Sharpe"    = "max_sharpe",
+                  "Minima Variancia" = "min_variance",
+                  "Maximo Retorno"   = "max_return")
+    freq_map <- c(semanal = "weekly", mensal = "monthly",
+                  trimestral = "quarterly", semestral = "semiannual")
+    
+    # A carteira agora vem de um backtest walk-forward de verdade: pesos
+    # reestimados (dados mensais, janela expansivel) a cada rebalanceamento,
+    # nunca olhando o futuro -- e nao mais de pesos fixos estimados no
+    # periodo inteiro. Ver calc_walkforward_contributions().
+    carteira_sim <- tryCatch(
+      calc_walkforward_contributions(
+        dados_portfolio()$acoes,
+        portfolio_type          = tipo_map[[input$carteira_aportes]],
+        rebalance_every         = input$rebalance_dias,
+        min_window              = 252,
+        turnover_cost           = input$turnover_custo / 100,
+        risk_free               = dados_portfolio()$rf,
+        initial_contribution    = input$aporte_inicial,
+        periodic_contribution   = input$aporte_periodico,
+        contribution_frequency  = freq_map[[input$periodicidade]]
+      ),
+      error = function(e) e
+    )
+    
+    # Mesmo cuidado do backtest_dados(): need() forca a avaliacao de
+    # `message` mesmo quando a condicao passa, entao conditionMessage()
+    # precisa ficar num if() calculado antes, nunca dentro do need().
+    erro_msg <- if (inherits(carteira_sim, "error")) {
+      if (input$idioma == "pt")
+        paste("Não foi possível simular os aportes:", conditionMessage(carteira_sim))
+      else
+        paste("Could not simulate contributions:", conditionMessage(carteira_sim))
+    } else {
+      NULL
+    }
+    validate(need(is.null(erro_msg), erro_msg))
+    
+    # Benchmark e CDI nao passam por rebalanceamento (sao um unico ativo/
+    # taxa cada), entao continuam pelo simulador simples -- mas precisam
+    # comecar na MESMA data que a carteira agora comeca (depois do
+    # min_window), senao a comparacao fica injusta, igual ao ajuste feito
+    # em plot_vs_benchmark.
+    data_inicio <- min(carteira_sim$ref_date)
+    
     bench_ret <- dados_benchmark()$bench |>
-      filter(!is.na(ret_adjusted_prices)) |>
+      filter(!is.na(ret_adjusted_prices), ref_date >= data_inicio) |>
       select(ref_date, ret_bench = ret_adjusted_prices)
-
-    cdi_serie <- get_risk_free("cdi", from = input$datas[1], to = input$datas[2]) |>
-      rename(taxa_cdi = taxa)
-
-    base <- dplyr::tibble(ref_date = retornos_wide$ref_date, ret_carteira = ret_carteira) |>
-      dplyr::inner_join(cdi_serie, by = "ref_date") |>
-      dplyr::left_join(bench_ret, by = "ref_date") |>
-      dplyr::mutate(ret_bench = tidyr::replace_na(ret_bench, 0)) |>
+    
+    cdi_serie <- get_risk_free("cdi", from = data_inicio, to = input$datas[2]) |>
+      rename(taxa_cdi = taxa) |>
+      filter(ref_date >= data_inicio)
+    
+    base <- dplyr::inner_join(bench_ret, cdi_serie, by = "ref_date") |>
       dplyr::arrange(ref_date)
-
-    validate(need(nrow(base) > 1, "Não há datas em comum suficientes entre carteira e CDI."))
-
-    carteira_sim  <- simular_aportes_fn(base$ref_date, exp(base$ret_carteira),
-                                        input$aporte_inicial, input$aporte_periodico, input$periodicidade)
+    
+    validate(need(
+      nrow(base) > 1,
+      if (input$idioma == "pt")
+        "Não há datas em comum suficientes entre benchmark e CDI."
+      else
+        "Not enough overlapping dates between benchmark and CDI."
+    ))
+    
     benchmark_sim <- simular_aportes_fn(base$ref_date, exp(base$ret_bench),
                                         input$aporte_inicial, input$aporte_periodico, input$periodicidade)
     cdi_sim       <- simular_aportes_fn(base$ref_date, 1 + base$taxa_cdi,
                                         input$aporte_inicial, input$aporte_periodico, input$periodicidade)
-
+    
     list(carteira = carteira_sim, benchmark = benchmark_sim, cdi = cdi_sim)
   })
-
+  
   moeda_br <- scales::label_currency(prefix = "R$ ", big.mark = ".", decimal.mark = ",", accuracy = 1)
-
+  
   output$aviso_rebalanceamento <- renderUI({
-    div(class = "alert alert-warning text-justify", style = "font-size: 0.9em;", dic()$aviso_rebalanceamento)
+    div(class = "alert alert-secondary text-justify", style = "font-size: 0.9em;", dic()$aviso_backtest)
   })
-
+  
+  output$bloco_backtest_label <- renderUI({
+    tags$small(dic()$bloco_backtest_label, style = "color: #6C757D; display:block; margin-bottom: 6px;")
+  })
+  
   output$plot_aportes <- renderPlotly({
     req(aportes_dados())
     d <- dic(); res <- aportes_dados()
-
+    
     plot_ly(res$carteira, x = ~ref_date) |>
       add_trace(y = ~res$carteira$saldo, type = "scatter", mode = "lines", name = d$legenda_carteira,
                 line = list(color = COR_AZUL, width = 2)) |>
@@ -590,18 +698,18 @@ server <- function(input, output, session) {
              yaxis = list(title = "R$"),
              plot_bgcolor = "#FAFAFA", paper_bgcolor = "#FFFFFF")
   })
-
+  
   output$resumo_aportes <- renderUI({
     req(aportes_dados())
     d <- dic()
     tagList(DTOutput("tabela_comparacao_aportes"), div(class = "alert alert-secondary text-justify", style = "font-size: 0.85em; margin-top:10px;", d$aviso_anualizacao))
   })
-
+  
   output$tabela_comparacao_aportes <- renderDT({
     req(aportes_dados())
     d <- dic(); res <- aportes_dados()
     n_obs <- nrow(res$carteira)
-
+    
     calc_linha <- function(df, nome) {
       final <- tail(df, 1)
       ganho_nominal <- final$saldo - final$investido
@@ -610,7 +718,7 @@ server <- function(input, output, session) {
       dplyr::tibble(Serie = nome, ganho_nominal = ganho_nominal,
                     ganho_pct = ganho_pct, ganho_anual_pct = ganho_anual_pct)
     }
-
+    
     tabela <- dplyr::bind_rows(
       calc_linha(res$carteira, d$legenda_carteira),
       calc_linha(res$benchmark, d$legenda_benchmark),
@@ -619,11 +727,11 @@ server <- function(input, output, session) {
       mutate(ganho_nominal = moeda_br(ganho_nominal),
              ganho_pct = percent(ganho_pct, accuracy = 0.1),
              ganho_anual_pct = percent(ganho_anual_pct, accuracy = 0.1))
-
+    
     datatable(tabela, options = list(dom = "t", ordering = FALSE), rownames = FALSE, selection = "none",
               colnames = c(d$col_serie, d$col_ganho_nominal, d$col_ganho_pct, d$col_ganho_anual))
   })
-
+  
   # ---- Learn tab: explanatory text (Markowitz frontier and ETFs) ----
   output$texto_markowitz <- renderUI({
     d <- dic()
@@ -632,25 +740,25 @@ server <- function(input, output, session) {
       h4(d$etf_titulo), p(class = "text-justify", d$etf_texto)
     )
   })
-
+  
   output$cabecalho_aprenda <- renderUI({
     d <- dic()
     tagList(h4(d$aprenda_titulo), p(d$aprenda_intro))
   })
-
+  
   output$tabela_aprenda <- renderDT({
     d <- dic()
     campo_desc <- if (input$idioma == "pt") "pt" else "en"
     campo_cat  <- if (input$idioma == "pt") "categoria_pt" else "categoria_en"
-
+    
     tabela <- TABELA_APRENDA |>
       transmute(Ticker = ticker, Descricao = .data[[campo_desc]], Categoria = .data[[campo_cat]])
-
+    
     datatable(tabela, options = list(dom = "t", pageLength = 15, ordering = FALSE), rownames = FALSE,
               selection = "none",
               colnames = c(d$col_ticker, d$col_oque, d$col_categoria))
   })
-
+  
   # ---- Observação sobre alinhamento de dados ----
   output$observacao_alinhamento <- renderUI({
     d <- dic()
@@ -659,7 +767,7 @@ server <- function(input, output, session) {
       p(class = "text-justify", d$observacao_alinhamento_texto)
     )
   })
-
+  
   # ---- Model assumptions (condensed version of the README section) ----
   output$pressupostos_modelo <- renderUI({
     d <- dic()
