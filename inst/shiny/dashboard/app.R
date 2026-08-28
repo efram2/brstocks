@@ -52,7 +52,8 @@ DIC <- list(
     comparar_label = "Comparar qual carteira?",
     rebalance_dias_label = "Dias úteis entre rebalanceamentos",
     turnover_custo_label = "Custo de turnover (%)",
-    aviso_backtest = "Esta aba roda um backtest walk-forward de verdade: em cada rebalanceamento, os pesos são reestimados usando só os dados até aquela data (nunca dados futuros), e o custo de turnover informado é descontado do valor da carteira a cada rebalanceamento, proporcional ao quanto os pesos mudaram. Os primeiros dias do período ficam de fora do gráfico -- são usados só para acumular histórico suficiente antes do primeiro rebalanceamento.",
+    bloco_backtest_label = "Backtest walk-forward (Portfolio vs Benchmark / Contributions)",
+    aviso_backtest = "Esta aba roda um backtest walk-forward de verdade: em cada rebalanceamento, os pesos são reestimados usando só os dados até aquela data (nunca dados futuros, sempre a partir de retornos mensais, como na Fronteira Eficiente), e o custo de turnover informado é descontado do valor da carteira a cada rebalanceamento, proporcional ao quanto os pesos mudaram. Os primeiros dias do período ficam de fora do gráfico -- são usados só para acumular histórico suficiente antes do primeiro rebalanceamento.",
     titulo_fronteira = "Fronteira Eficiente",
     titulo_correlacao = "Matriz de Correlação",
     titulo_vs_bench = "Retorno Acumulado — Carteira vs. Benchmark",
@@ -66,7 +67,7 @@ DIC <- list(
     etf_texto = "Um ETF (Exchange Traded Fund, ou Fundo de Índice) é negociado na bolsa como uma ação comum, mas seu objetivo é replicar o desempenho de um índice de referência, em vez de representar uma empresa só. Por isso, os ativos marcados como ETF na tabela abaixo estão ligados a um índice específico — o Ibovespa, o S&P 500, o preço do ouro, um índice global de ações etc.",
     pressupostos_titulo = "Pressupostos do modelo (leia antes de tirar conclusões)",
     pressupostos_itens = c(
-      "Rebalanceamento diário assumido nas abas \"Efficient Frontier\" e \"Contributions\": os pesos ficam fixos ao longo de todo o período, sem custos de rebalanceamento considerados. A aba \"Portfolio vs Benchmark\" é diferente: roda um backtest walk-forward de verdade (nunca olha dados futuros para decidir pesos passados), com dias úteis entre rebalanceamentos e custo de turnover configuráveis.",
+      "Rebalanceamento diário assumido apenas na aba \"Efficient Frontier\" (a fronteira e a tabela de carteiras notáveis refletem pesos fixos, estimados com o período inteiro, sem custos de rebalanceamento). As abas \"Portfolio vs Benchmark\" e \"Contributions\" são diferentes: ambas rodam um backtest walk-forward de verdade (nunca olham dados futuros para decidir pesos passados), com dias úteis entre rebalanceamentos e custo de turnover configuráveis na barra lateral.",
       "A fronteira é uma aproximação por simulação (Monte Carlo), não um otimizador exato — os pontos de mínima variância / máximo Sharpe / máximo retorno são os melhores encontrados entre as carteiras simuladas, não o ótimo matemático.",
       "O CDI é usado como proxy da taxa livre de risco, obtido direto do Banco Central — não de um fundo específico, para não misturar taxa de administração ou erro de rastreamento na comparação.",
       "O retorno anualizado do Simulador de Aportes é uma aproximação (não uma TIR/XIRR ponderada pelo momento de cada aporte) — serve como ordem de grandeza, não como retorno exato de fundo.",
@@ -85,7 +86,6 @@ DIC <- list(
     titulo_aportes = "Evolução do patrimônio com aportes",
     legenda_saldo = "Patrimônio", legenda_investido = "Total investido",
     resumo_investido = "Total investido", resumo_saldo = "Patrimônio final", resumo_ganho = "Ganho",
-    aviso_rebalanceamento = "Hipótese do modelo: a simulação assume que a carteira é rebalanceada diariamente para manter os pesos fixos no ponto escolhido (mínima variância / máximo Sharpe / máximo retorno). Na prática isso exigiria comprar e vender ativos todo dia útil, o que gera custos de corretagem e impostos não considerados aqui.",
     legenda_carteira = "Sua carteira", legenda_benchmark = "Benchmark (mesmos aportes)", legenda_cdi = "CDI (mesmos aportes)",
     col_serie = "Onde investiu", col_ganho_nominal = "Ganho (R$)", col_ganho_pct = "Ganho total (%)", col_ganho_anual = "Retorno anualizado (%)",
     aviso_anualizacao = "O retorno anualizado aqui é uma aproximação simples (ganho total elevado a 252/nº de dias úteis do período) — não é uma taxa interna de retorno (XIRR) ponderada pelo momento exato de cada aporte. Serve como ordem de grandeza pra comparar as três opções, não como retorno exato de fundo.",
@@ -110,7 +110,8 @@ DIC <- list(
     comparar_label = "Compare which portfolio?",
     rebalance_dias_label = "Trading days between rebalances",
     turnover_custo_label = "Turnover cost (%)",
-    aviso_backtest = "This tab runs a true walk-forward backtest: at each rebalance, weights are re-estimated using only data available up to that date (never future data), and the given turnover cost is deducted from the portfolio's value at each rebalance, proportional to how much the weights actually changed. The first days of the selected period are left out of the chart -- they're used only to build up enough history before the first rebalance.",
+    bloco_backtest_label = "Walk-forward backtest (Portfolio vs Benchmark / Contributions)",
+    aviso_backtest = "This tab runs a true walk-forward backtest: at each rebalance, weights are re-estimated using only data available up to that date (never future data, always from monthly-aggregated returns, matching the Efficient Frontier tab), and the given turnover cost is deducted from the portfolio's value at each rebalance, proportional to how much the weights actually changed. The first days of the selected period are left out of the chart -- they're used only to build up enough history before the first rebalance.",
     titulo_fronteira = "Efficient Frontier",
     titulo_correlacao = "Correlation Matrix",
     titulo_vs_bench = "Cumulative Return — Portfolio vs. Benchmark",
@@ -124,7 +125,7 @@ DIC <- list(
     etf_texto = "An ETF (Exchange Traded Fund) trades on the exchange like a regular stock, but its goal is to replicate the performance of a reference index rather than represent a single company. That's why the assets marked as ETFs in the table below are tied to a specific index — the Ibovespa, the S&P 500, the price of gold, a global equity index, and so on.",
     pressupostos_titulo = "Model assumptions (read before drawing conclusions)",
     pressupostos_itens = c(
-      "Daily rebalancing assumed on the \"Efficient Frontier\" and \"Contributions\" tabs: weights stay fixed across the whole period, with no rebalancing costs modeled. The \"Portfolio vs Benchmark\" tab is different: it runs a true walk-forward backtest (never looking at future data to decide past weights), with configurable trading days between rebalances and turnover cost.",
+      "Daily rebalancing assumed only on the \"Efficient Frontier\" tab (the frontier and the key-portfolios table reflect fixed weights, estimated over the whole period, with no rebalancing costs modeled). The \"Portfolio vs Benchmark\" and \"Contributions\" tabs are different: both run a true walk-forward backtest (never looking at future data to decide past weights), with trading days between rebalances and turnover cost configurable in the sidebar.",
       "The frontier is a Monte Carlo approximation, not an exact optimizer -- the minimum-variance / maximum-Sharpe / maximum-return points are the best found among the simulated portfolios, not the true mathematical optimum.",
       "CDI is used as the risk-free proxy, fetched directly from the Central Bank -- not from a specific fund, to avoid mixing in management fees or tracking error.",
       "The annualized return in the Contributions Simulator is an approximation (not a money-weighted IRR/XIRR) -- it's an order-of-magnitude comparison, not an exact fund-style return.",
@@ -143,7 +144,6 @@ DIC <- list(
     titulo_aportes = "Portfolio growth with contributions",
     legenda_saldo = "Balance", legenda_investido = "Total contributed",
     resumo_investido = "Total contributed", resumo_saldo = "Final balance", resumo_ganho = "Gain",
-    aviso_rebalanceamento = "Model assumption: the simulation assumes the portfolio is rebalanced daily to keep fixed weights at the chosen point (min variance / max Sharpe / max return). In practice this would require buying and selling assets every trading day, incurring brokerage costs and taxes not modeled here.",
     legenda_carteira = "Your portfolio", legenda_benchmark = "Benchmark (same contributions)", legenda_cdi = "CDI (same contributions)",
     col_serie = "Invested in", col_ganho_nominal = "Gain (R$)", col_ganho_pct = "Total gain (%)", col_ganho_anual = "Annualized return (%)",
     aviso_anualizacao = "The annualized return here is a simple approximation (total gain raised to 252/number of trading days in the period) -- it is not a money-weighted internal rate of return (XIRR) accounting for the exact timing of each contribution. Use it as an order-of-magnitude comparison across the three options, not as an exact fund return.",
@@ -209,6 +209,14 @@ ui <- page_sidebar(
     checkboxInput("anualizar", "Anualizar retorno/risco (x252)", value = TRUE),
     actionButton("simular", "Simular carteira", class = "btn-primary"),
     hr(),
+    div(id = "bloco_backtest",
+        uiOutput("bloco_backtest_label", inline = TRUE),
+        numericInput("rebalance_dias", "Dias úteis entre rebalanceamentos",
+                     value = 21, min = 1, step = 1),
+        numericInput("turnover_custo", "Custo de turnover (%)",
+                     value = 0, min = 0, max = 100, step = 0.1)
+    ),
+    hr(),
     uiOutput("hover_help_txt")
   ),
   
@@ -250,12 +258,6 @@ ui <- page_sidebar(
                   choices = c("Máximo Sharpe" = "Maximo Sharpe",
                               "Mínima Variância" = "Minima Variancia",
                               "Máximo Retorno" = "Maximo Retorno")),
-      fluidRow(
-        column(6, numericInput("rebalance_dias", "Dias úteis entre rebalanceamentos",
-                               value = 21, min = 1, step = 1)),
-        column(6, numericInput("turnover_custo", "Custo de turnover (%)",
-                               value = 0, min = 0, max = 100, step = 0.1))
-      ),
       uiOutput("aviso_backtest"),
       plotlyOutput("plot_vs_benchmark", height = "550px")
     ),
@@ -432,13 +434,21 @@ server <- function(input, output, session) {
       error = function(e) e
     )
     
-    validate(need(
-      !inherits(resultado, "error"),
+    # IMPORTANTE: shiny::need() forca a avaliacao do argumento `message`
+    # mesmo quando a condicao passa (nao e' preguicoso como parece) -- por
+    # isso conditionMessage(resultado) precisa ficar dentro de um if() de
+    # verdade, calculado ANTES do need(), nunca dentro dele. Chamar
+    # conditionMessage() direto num tibble de sucesso e' o que causava
+    # o erro "no applicable method for conditionMessage".
+    erro_msg <- if (inherits(resultado, "error")) {
       if (input$idioma == "pt")
         paste("Não foi possível rodar o backtest:", conditionMessage(resultado))
       else
         paste("Could not run the backtest:", conditionMessage(resultado))
-    ))
+    } else {
+      NULL
+    }
+    validate(need(is.null(erro_msg), erro_msg))
     
     resultado
   })
@@ -588,34 +598,71 @@ server <- function(input, output, session) {
   
   aportes_dados <- eventReactive(input$simular_aportes, {
     req(dados_portfolio(), dados_benchmark())
-    pesos_sel <- dados_portfolio()$key |> filter(tipo == input$carteira_aportes) |> pull(pesos) |> (\(x) x[[1]])()
     
-    retornos_wide <- dados_portfolio()$acoes |>
-      filter(ticker %in% names(pesos_sel), !is.na(ret_adjusted_prices)) |>
-      select(ticker, ref_date, ret_adjusted_prices) |>
-      pivot_wider(names_from = ticker, values_from = ret_adjusted_prices) |>
-      arrange(ref_date) |> tidyr::drop_na()
+    tipo_map <- c("Maximo Sharpe"    = "max_sharpe",
+                  "Minima Variancia" = "min_variance",
+                  "Maximo Retorno"   = "max_return")
+    freq_map <- c(semanal = "weekly", mensal = "monthly",
+                  trimestral = "quarterly", semestral = "semiannual")
     
-    matriz <- as.matrix(retornos_wide[, names(pesos_sel)])
-    ret_carteira <- as.numeric(matriz %*% pesos_sel[colnames(matriz)])
+    # A carteira agora vem de um backtest walk-forward de verdade: pesos
+    # reestimados (dados mensais, janela expansivel) a cada rebalanceamento,
+    # nunca olhando o futuro -- e nao mais de pesos fixos estimados no
+    # periodo inteiro. Ver calc_walkforward_contributions().
+    carteira_sim <- tryCatch(
+      calc_walkforward_contributions(
+        dados_portfolio()$acoes,
+        portfolio_type          = tipo_map[[input$carteira_aportes]],
+        rebalance_every         = input$rebalance_dias,
+        min_window              = 252,
+        turnover_cost           = input$turnover_custo / 100,
+        risk_free               = dados_portfolio()$rf,
+        initial_contribution    = input$aporte_inicial,
+        periodic_contribution   = input$aporte_periodico,
+        contribution_frequency  = freq_map[[input$periodicidade]]
+      ),
+      error = function(e) e
+    )
+    
+    # Mesmo cuidado do backtest_dados(): need() forca a avaliacao de
+    # `message` mesmo quando a condicao passa, entao conditionMessage()
+    # precisa ficar num if() calculado antes, nunca dentro do need().
+    erro_msg <- if (inherits(carteira_sim, "error")) {
+      if (input$idioma == "pt")
+        paste("Não foi possível simular os aportes:", conditionMessage(carteira_sim))
+      else
+        paste("Could not simulate contributions:", conditionMessage(carteira_sim))
+    } else {
+      NULL
+    }
+    validate(need(is.null(erro_msg), erro_msg))
+    
+    # Benchmark e CDI nao passam por rebalanceamento (sao um unico ativo/
+    # taxa cada), entao continuam pelo simulador simples -- mas precisam
+    # comecar na MESMA data que a carteira agora comeca (depois do
+    # min_window), senao a comparacao fica injusta, igual ao ajuste feito
+    # em plot_vs_benchmark.
+    data_inicio <- min(carteira_sim$ref_date)
     
     bench_ret <- dados_benchmark()$bench |>
-      filter(!is.na(ret_adjusted_prices)) |>
+      filter(!is.na(ret_adjusted_prices), ref_date >= data_inicio) |>
       select(ref_date, ret_bench = ret_adjusted_prices)
     
-    cdi_serie <- get_risk_free("cdi", from = input$datas[1], to = input$datas[2]) |>
-      rename(taxa_cdi = taxa)
+    cdi_serie <- get_risk_free("cdi", from = data_inicio, to = input$datas[2]) |>
+      rename(taxa_cdi = taxa) |>
+      filter(ref_date >= data_inicio)
     
-    base <- dplyr::tibble(ref_date = retornos_wide$ref_date, ret_carteira = ret_carteira) |>
-      dplyr::inner_join(cdi_serie, by = "ref_date") |>
-      dplyr::left_join(bench_ret, by = "ref_date") |>
-      dplyr::mutate(ret_bench = tidyr::replace_na(ret_bench, 0)) |>
+    base <- dplyr::inner_join(bench_ret, cdi_serie, by = "ref_date") |>
       dplyr::arrange(ref_date)
     
-    validate(need(nrow(base) > 1, "Não há datas em comum suficientes entre carteira e CDI."))
+    validate(need(
+      nrow(base) > 1,
+      if (input$idioma == "pt")
+        "Não há datas em comum suficientes entre benchmark e CDI."
+      else
+        "Not enough overlapping dates between benchmark and CDI."
+    ))
     
-    carteira_sim  <- simular_aportes_fn(base$ref_date, exp(base$ret_carteira),
-                                        input$aporte_inicial, input$aporte_periodico, input$periodicidade)
     benchmark_sim <- simular_aportes_fn(base$ref_date, exp(base$ret_bench),
                                         input$aporte_inicial, input$aporte_periodico, input$periodicidade)
     cdi_sim       <- simular_aportes_fn(base$ref_date, 1 + base$taxa_cdi,
@@ -627,7 +674,11 @@ server <- function(input, output, session) {
   moeda_br <- scales::label_currency(prefix = "R$ ", big.mark = ".", decimal.mark = ",", accuracy = 1)
   
   output$aviso_rebalanceamento <- renderUI({
-    div(class = "alert alert-warning text-justify", style = "font-size: 0.9em;", dic()$aviso_rebalanceamento)
+    div(class = "alert alert-secondary text-justify", style = "font-size: 0.9em;", dic()$aviso_backtest)
+  })
+  
+  output$bloco_backtest_label <- renderUI({
+    tags$small(dic()$bloco_backtest_label, style = "color: #6C757D; display:block; margin-bottom: 6px;")
   })
   
   output$plot_aportes <- renderPlotly({
